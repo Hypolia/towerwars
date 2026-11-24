@@ -266,6 +266,16 @@ impl TowerWarsPlugin {
         }
     }
 
+    async fn announce_join(&self, event: &mut PlayerJoin) {
+        let message = hypolia_protocol::chat::join_message(&event.player().name);
+        event.set_join_message(Some(message));
+    }
+
+    async fn announce_quit(&self, event: &mut PlayerLeave) {
+        let message = hypolia_protocol::chat::quit_message(&event.player().name);
+        event.set_quit_message(Some(message));
+    }
+
     async fn on_player_join(&self, event: &PlayerJoin) {
         if let Some(game) = self.game() {
             game.admit(event.player().clone()).await;
