@@ -231,6 +231,14 @@ impl TowerWarsPlugin {
         }
     }
 
+    #[command("rejouer")]
+    async fn rejouer(&self, ctx: Context) {
+        match self.game() {
+            Some(game) => game.replay(&ctx.sender).await,
+            None => ctx.reply("§cLe jeu n'est pas prêt."),
+        }
+    }
+
     #[command("towerwars")]
     async fn towerwars(&self, ctx: Context, #[suggest(Self::actions)] action: String) {
         let Some(game) = self.game() else {

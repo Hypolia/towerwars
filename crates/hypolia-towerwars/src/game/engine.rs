@@ -550,6 +550,7 @@ impl Game {
             for player in self.everyone() {
                 player.message.send(not_counted_notice());
             }
+            self.offer_replay();
             return;
         }
         for reward in &ack.rewards {
@@ -564,6 +565,7 @@ impl Game {
                 player.title.send(Title::new(title.as_str()));
             }
         }
+        self.offer_replay();
     }
 
     pub async fn restore_arena(&self, prebuilt: bool) -> usize {
@@ -643,6 +645,45 @@ impl Game {
         let intents = self.lock().session.quit(player_id(player.uuid));
         self.run(intents).await;
         self.check_phase_changed();
+    }
+
+    pub async fn replay(&self, player: &Player) {
+        if self.lock().session.is_playing() {
+            player
+                .message
+                .send("§cLa partie est en cours : attends la fin pour rejouer.");
+            return;
+        }
+        let Some(orch) = &self.orchestrator else {
+            player
+                .message
+                .send("§cRejouer n'est pas disponible sur ce serveur.");
+            return;
+        };
+        let request = hypolia_protocol::JoinQueueRequest {
+            player_uuid: player.uuid,
+            player_name: player.name.clone(),
+            game: hypolia_protocol::GameKind::TowerWars,
+            match_size: 0,
+        };
+        match orch.join_queue(&request).await {
+            Ok(resp) => player.message.send(replay_reply(&resp)),
+            Err(err) => {
+                tracing::warn!(player = %player.name, "rejouer : file indisponible : {err}");
+                player
+                    .message
+                    .send("§cFile d'attente indisponible, réessaie depuis le Hub.");
+            }
+        }
+    }
+
+    fn offer_replay(&self) {
+        if self.orchestrator.is_none() {
+            return;
+        }
+        for player in self.everyone() {
+            player.message.send_rich(replay_prompt());
+        }
     }
 
     pub async fn send_player_hub(&self, player: &Player) {
@@ -1882,8 +1923,63 @@ fn give_kit(player: &Player, playing: bool) {
     });
 }
 
+fn replay_prompt() -> rspigot_plugin::RichMessage {
+    rspigot_plugin::RichMessage::new()
+        .text("§7Encore une ? ")
+        .part(
+            rspigot_plugin::Part::new("§a§l[Rejouer]")
+                .hover("§eRejoindre la file pour une nouvelle partie de TowerWars")
+                .click(rspigot_plugin::Click::RunCommand(
+                    hypolia_protocol::chat::REPLAY_COMMAND.to_owned(),
+                )),
+        )
+        .text(" §8ou §d/hub")
+}
+
+fn replay_reply(resp: &hypolia_protocol::JoinQueueResponse) -> String {
+    match resp.status {
+        hypolia_protocol::QueueJoinStatus::Transferring => {
+            "§aPartie trouvée, transfert en cours…".to_owned()
+        }
+        hypolia_protocol::QueueJoinStatus::AlreadyQueued => format!(
+            "§eTu es déjà en file pour TowerWars (position {}).",
+            resp.position
+        ),
+        hypolia_protocol::QueueJoinStatus::Queued => format!(
+            "§aTu es en file pour une nouvelle partie de TowerWars (position {}).",
+            resp.position
+        ),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn replay_reply_tells_the_queue_position() {
+        let resp = |status| hypolia_protocol::JoinQueueResponse {
+            status,
+            position: 3,
+            total_queued: 3,
+            min_players: 2,
+            target_server: None,
+            ready_servers: 0,
+            active_servers: 1,
+            max_servers: 4,
+        };
+        assert!(
+            replay_reply(&resp(hypolia_protocol::QueueJoinStatus::Queued))
+                .contains("TowerWars (position 3)")
+        );
+        assert!(
+            replay_reply(&resp(hypolia_protocol::QueueJoinStatus::AlreadyQueued))
+                .contains("déjà en file")
+        );
+        assert!(
+            replay_reply(&resp(hypolia_protocol::QueueJoinStatus::Transferring))
+                .contains("Partie trouvée")
+        );
+    }
+
     use super::*;
 
     #[test]

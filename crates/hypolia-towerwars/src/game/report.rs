@@ -184,18 +184,8 @@ pub struct RewardDisplay {
 }
 
 pub fn reward_display(reward: &PlayerReward) -> RewardDisplay {
-    let mut lines = vec![format!(
-        "§a+{} XP TowerWars §8• §6+{} coins",
-        reward.xp, reward.coins
-    )];
-    if reward.network_level_up {
-        lines.push(format!(
-            "§bNiveau réseau §f{} §b: bravo !",
-            reward.network.level
-        ));
-    }
     RewardDisplay {
-        lines,
+        lines: hypolia_protocol::chat::reward_recap("TowerWars", reward),
         title: reward
             .game_level_up
             .then(|| format!("§dLevel {} TowerWars !", reward.game.level)),
@@ -397,7 +387,11 @@ mod tests {
     #[test]
     fn a_reward_shows_xp_and_coins() {
         let display = reward_display(&reward(false, false));
-        assert_eq!(display.lines, vec!["§a+150 XP TowerWars §8• §6+30 coins"]);
+        assert!(
+            display
+                .lines
+                .contains(&"§a+150 XP §8• §6+30 coins".to_owned())
+        );
         assert_eq!(display.title, None);
     }
 
@@ -405,8 +399,12 @@ mod tests {
     fn level_ups_add_a_title_and_a_network_message() {
         let display = reward_display(&reward(true, true));
         assert_eq!(display.title.as_deref(), Some("§dLevel 12 TowerWars !"));
-        assert_eq!(display.lines.len(), 2);
-        assert!(display.lines[1].contains('5'));
+        assert!(
+            display
+                .lines
+                .iter()
+                .any(|l| l.contains("Niveau réseau 5 atteint"))
+        );
     }
 
     #[test]

@@ -1,8 +1,9 @@
 use std::time::Duration;
 
 use hypolia_protocol::{
-    GameKind, HeartbeatRequest, HeartbeatResponse, MatchReport, MatchReportAck, PhaseUpdateRequest,
-    PlayerProfile, PlayerQueueStatus, SendToLobbyRequest, ServerKind, ServerPhase,
+    GameKind, HeartbeatRequest, HeartbeatResponse, JoinQueueRequest, JoinQueueResponse,
+    MatchReport, MatchReportAck, PhaseUpdateRequest, PlayerProfile, PlayerQueueStatus,
+    SendToLobbyRequest, ServerKind, ServerPhase,
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -94,6 +95,24 @@ impl TowerWarsOrchestratorClient {
             return Err(OrchestratorClientError::HttpStatus(resp.status().as_u16()));
         }
         Ok(())
+    }
+
+    pub async fn join_queue(
+        &self,
+        request: &JoinQueueRequest,
+    ) -> Result<JoinQueueResponse, OrchestratorClientError> {
+        let resp = self
+            .apply_auth(
+                self.http
+                    .post(format!("{}/api/v1/queue/join", self.base_url)),
+            )
+            .json(request)
+            .send()
+            .await?;
+        if !resp.status().is_success() {
+            return Err(OrchestratorClientError::HttpStatus(resp.status().as_u16()));
+        }
+        Ok(resp.json().await?)
     }
 
     pub async fn send_player_to_lobby(
