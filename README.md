@@ -44,7 +44,7 @@ Sans carte S3, chaque pod construit sa carte au démarrage (~22 s). Avec une car
 
 ```bash
 ./deploy/scripts/bake-map.sh imperial
-S3_PREFIX=towerwars/ ../platform/deploy/scripts/upload-map.sh imperial dist/towerwars-maps/imperial
+../platform/deploy/scripts/upload-map.sh towerwars imperial dist/towerwars-maps/imperial
 ```
 
 Refaire le bake à chaque changement de `map/generate.rs`, `game/arena.rs` ou `game/imperial.rs`.

@@ -246,9 +246,9 @@ Décisions prises après des parties de test en solo contre les bots. Mesures : 
 
 ## Amendement 2026-11-24 — carte précuite sur S3 / RustFS
 
-- `deploy/scripts/bake-towerwars-map.sh <nom>` lance un serveur rspigot temporaire avec le plugin, attend « arène construite … pending_chunks=0 », sauvegarde (`save-all flush`, `stop`) puis produit `dist/towerwars-maps/<nom>/{world.zip,arena.json}`. `arena.json` est la carte TowerWars (`export_map`), le monde exclut `playerdata`, `stats`, `advancements`.
-- Téléversement : `upload-map.sh` existant, avec `S3_PREFIX=towerwars/`. Les cartes TowerWars ne sont jamais sous `s3.prefix` (`maps/`), sinon la rotation SheepWars les choisirait.
-- Chart : si `s3.enabled` et `orchestrator.towerwars.map` sont définis, le Pod TowerWars reçoit l'`initContainer` `map-sync` (préfixe `orchestrator.towerwars.mapPrefix`), et le plugin reçoit `TOWERWARS_MAP_PATH=/data/arena.json` et `TOWERWARS_WORLD_PREBUILT=true` (volume `/data` en lecture seule). Sans carte, rien ne change.
+- `deploy/scripts/bake-map.sh <nom>` lance un serveur rspigot temporaire avec le plugin, attend « arène construite … pending_chunks=0 », sauvegarde (`save-all flush`, `stop`) puis produit `dist/towerwars-maps/<nom>/{world.zip,arena.json}`. `arena.json` est la carte TowerWars (`export_map`), le monde exclut `playerdata`, `stats`, `advancements`.
+- Téléversement : `upload-map.sh towerwars <nom> <dossier>` de hypolia/platform. Les maps de chaque jeu vivent sous leur propre préfixe (`towerwars/<nom>/`, `sheepwars/<nom>/`) : la rotation SheepWars ne voit jamais les cartes TowerWars.
+- Chart : si `s3.enabled` et `orchestrator.towerwars.map` sont définis, le Pod TowerWars reçoit l'`initContainer` `map-sync` (préfixe `towerwars/`), et le plugin reçoit `TOWERWARS_MAP_PATH=/data/arena.json` et `TOWERWARS_WORLD_PREBUILT=true` (volume `/data` en lecture seule). Sans carte, rien ne change.
 - `map-sync` lit aussi `TOWERWARS_MAP_NAME` (déjà injecté par l'orchestrateur).
 - Plugin : avec `TOWERWARS_WORLD_PREBUILT=true`, les chunks de l'arène sont chargés de force mais aucun bloc n'est posé. Mesure locale : prêt en 0,1 s au lieu de 22 s.
 - Le bake doit être refait à chaque changement de carte ou de décor dans le code.
