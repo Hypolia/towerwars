@@ -108,6 +108,6 @@ echo
 echo "Carte prête dans ${OUT_DIR} :"
 ls -lh "${OUT_DIR}"
 echo
-echo "Téléverser sur RustFS (préfixe TowerWars, jamais celui de SheepWars) :"
-echo "  S3_PREFIX=towerwars/ ../platform/deploy/scripts/upload-map.sh ${MAP_NAME} ${OUT_DIR#"${ROOT_DIR}/"}"
+echo "Téléverser sur RustFS, sous towerwars/${MAP_NAME}/ :"
+echo "  ../platform/deploy/scripts/upload-map.sh towerwars ${MAP_NAME} ${OUT_DIR}"
 echo "Puis activer : --set orchestrator.towerwars.map=${MAP_NAME}"
