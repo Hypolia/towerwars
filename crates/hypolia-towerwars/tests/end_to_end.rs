@@ -748,7 +748,7 @@ fn towerwars_full_lifecycle_orchestrator_countdown_play_forfeit_and_report() {
 
     env.core.run_until("alice sees her rewards", |c| {
         pump(c, &mut players[..1]);
-        players[0].said("+150 XP TowerWars")
+        players[0].said("+150 XP") && players[0].said("RÉCAP DE PARTIE • TowerWars")
     });
     env.core
         .run_until("alice is sent back to the hub and the pod ends", |_| {
