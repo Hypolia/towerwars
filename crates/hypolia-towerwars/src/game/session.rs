@@ -5,6 +5,7 @@ use uuid::Uuid;
 use super::bot::{BOT_TURN_TICKS, Bot};
 use super::intent::Intent;
 use super::lanes::seat_lineup;
+use super::onboarding::countdown_beat;
 use super::report::MatchLog;
 use crate::config::TowerWarsConfig;
 use crate::domain::{GameMode, LANE_COUNT, LaneId, PlayerId, TICKS_PER_SECOND};
@@ -302,7 +303,11 @@ impl Session {
             );
         }
         self.roster.push(player);
-        let mut intents = vec![Intent::Enroll { player }, Intent::Lobby { player }];
+        let mut intents = vec![
+            Intent::Enroll { player },
+            Intent::Lobby { player },
+            Intent::Welcome { player },
+        ];
         intents.extend(self.open());
         intents
     }
@@ -368,6 +373,9 @@ impl Session {
                 self.stage = Stage::Countdown {
                     remaining: remaining - 1,
                 };
+                if let Some(seconds) = countdown_beat(remaining - 1) {
+                    tick.intents.push(Intent::CountdownBeat { seconds });
+                }
             }
             Stage::Playing => self.advance(&mut tick),
             Stage::Waiting | Stage::Ended { .. } => {}
@@ -1203,5 +1211,37 @@ mod tests {
             session.tick();
         }
         assert!(session.game().is_none());
+    }
+
+    #[test]
+    fn a_joining_player_is_welcomed() {
+        let mut session = session(EndBehavior::default());
+        assert!(
+            session
+                .join(pid(0))
+                .contains(&Intent::Welcome { player: pid(0) })
+        );
+    }
+
+    #[test]
+    fn the_countdown_beats_each_of_its_last_five_seconds() {
+        let rules = Rules {
+            countdown_ticks: 10 * TICKS_PER_SECOND,
+            ..rules()
+        };
+        let mut session = Session::new(Map::test_map(), rules, EndBehavior::default());
+        for index in 0..4 {
+            session.join(pid(index));
+        }
+        let mut beats = Vec::new();
+        for _ in 0..10 * TICKS_PER_SECOND {
+            for intent in session.tick().intents {
+                if let Intent::CountdownBeat { seconds } = intent {
+                    beats.push(seconds);
+                }
+            }
+        }
+        assert_eq!(beats, vec![5, 4, 3, 2, 1]);
+        assert!(session.is_playing());
     }
 }

@@ -2,7 +2,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::domain::{GameMode, TICKS_PER_SECOND};
+use crate::domain::{GameMode, PREPARATION_SECS, TICKS_PER_SECOND};
 use crate::map::Map;
 
 const DEFAULT_SERVER_ID: &str = "towerwars-1";
@@ -31,6 +31,7 @@ pub struct TowerWarsConfig {
     pub decor: bool,
     pub world_prebuilt: bool,
     pub bots: bool,
+    pub preparation_ticks: u32,
 }
 
 impl Default for TowerWarsConfig {
@@ -52,6 +53,7 @@ impl Default for TowerWarsConfig {
             decor: true,
             world_prebuilt: false,
             bots: false,
+            preparation_ticks: PREPARATION_SECS * TICKS_PER_SECOND,
         }
     }
 }
@@ -125,6 +127,7 @@ impl TowerWarsConfig {
                 .unwrap_or(false),
             seed: get("TOWERWARS_SEED").and_then(|raw| raw.parse::<u64>().ok()),
             countdown_ticks: secs("TOWERWARS_COUNTDOWN_SECS", DEFAULT_COUNTDOWN_SECS),
+            preparation_ticks: secs("TOWERWARS_PREPARATION_SECS", PREPARATION_SECS),
             end_delay_ticks: secs("TOWERWARS_END_DELAY_SECS", DEFAULT_END_DELAY_SECS),
             orchestrator_url,
             mode,
@@ -181,6 +184,7 @@ mod tests {
         assert_eq!(config.min_players, 1);
         assert_eq!(config.max_players, 12);
         assert!(!config.bots);
+        assert_eq!(config.preparation_ticks, 20 * 20);
         assert_eq!(config.countdown_ticks, 15 * 20);
         assert_eq!(config.end_delay_ticks, 10 * 20);
         assert_eq!(config.heartbeat_interval, Duration::from_secs(2));

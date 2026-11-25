@@ -9,6 +9,7 @@ mod menus;
 mod messages;
 mod names;
 mod notices;
+mod onboarding;
 mod render;
 mod report;
 mod session;

@@ -546,6 +546,7 @@ fn start_with(spectators: &[&str], setup: Setup) -> Env {
         seed: Some(5),
         decor: false,
         bots: setup.bots,
+        preparation_ticks: 0,
         ..TowerWarsConfig::default()
     };
     let plugin = TowerWarsPlugin::new(config);

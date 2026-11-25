@@ -38,6 +38,8 @@ pub enum SimError {
     MatchEnded,
     #[error("joueurs insuffisants pour ce mode")]
     NotEnoughPlayers,
+    #[error("les envois ne sont pas encore ouverts")]
+    Preparing,
     #[error("répartition des joueurs invalide")]
     InvalidSeating,
     #[error("toutes les voies adverses sont saturées")]
