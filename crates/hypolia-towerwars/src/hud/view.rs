@@ -55,12 +55,21 @@ pub fn next_tier(elapsed: u64) -> Option<(u8, u64)> {
     })
 }
 
-pub fn bossbar_progress(game: &Match) -> f64 {
+pub fn bossbar_progress(game: &Match, preparation_ticks: u64) -> f64 {
+    if game.elapsed() < preparation_ticks {
+        return game.elapsed() as f64 / preparation_ticks as f64;
+    }
     let cycle = game.elapsed() % INCOME_CYCLE_TICKS;
     (cycle as f64 / INCOME_CYCLE_TICKS as f64).clamp(0.0, 1.0)
 }
 
-pub fn bossbar_title(game: &Match) -> String {
+pub fn bossbar_title(game: &Match, preparation_ticks: u64) -> String {
+    if game.elapsed() < preparation_ticks {
+        return format!(
+            "§dTowerWars §7- §ePréparation §7: envois ouverts dans §f{}s",
+            (preparation_ticks - game.elapsed()).div_ceil(u64::from(TICKS_PER_SECOND))
+        );
+    }
     let remaining = INCOME_CYCLE_TICKS - game.elapsed() % INCOME_CYCLE_TICKS;
     format!(
         "§dTowerWars §7- prochain income dans §f{}s",
@@ -205,6 +214,8 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
+
+    const PREPARATION: u64 = 400;
     use crate::domain::{GameMode, MobKind, TowerKind};
     use crate::map::Map;
     use crate::sim::Seat;
@@ -254,7 +265,7 @@ mod tests {
         game.place(pid(0), TowerKind::Archer, (2, 4))
             .expect("place");
         let line = action_bar(&game, pid(0)).expect("line");
-        assert!(line.contains("Or: 35 ⛃"), "{line}");
+        assert!(line.contains("Or: 25 ⛃"), "{line}");
         assert!(line.contains("Tours: 1/80"), "{line}");
     }
 
@@ -273,22 +284,38 @@ mod tests {
     }
 
     #[test]
-    fn bossbar_tracks_the_income_cycle() {
+    fn bossbar_counts_down_the_preparation_first() {
         let mut game = game(4);
-        assert_eq!(bossbar_progress(&game), 0.0);
+        assert_eq!(bossbar_progress(&game, PREPARATION), 0.0);
+        assert!(bossbar_title(&game, PREPARATION).contains("Préparation"));
+        assert!(bossbar_title(&game, PREPARATION).contains("20s"));
+        for _ in 0..PREPARATION / 2 {
+            game.tick();
+        }
+        assert!((bossbar_progress(&game, PREPARATION) - 0.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn bossbar_tracks_the_income_cycle_after_the_preparation() {
+        let mut game = game(4);
+        for _ in 0..PREPARATION {
+            game.tick();
+        }
+        assert!(!bossbar_title(&game, PREPARATION).contains("Préparation"));
+        let cycle = PREPARATION % INCOME_CYCLE_TICKS;
+        for _ in 0..(INCOME_CYCLE_TICKS - cycle) {
+            game.tick();
+        }
+        assert_eq!(bossbar_progress(&game, PREPARATION), 0.0);
         for _ in 0..60 {
             game.tick();
         }
-        assert!((bossbar_progress(&game) - 0.5).abs() < 1e-9);
+        assert!((bossbar_progress(&game, PREPARATION) - 0.5).abs() < 1e-9);
         assert!(
-            bossbar_title(&game).contains("3s"),
+            bossbar_title(&game, PREPARATION).contains("3s"),
             "{}",
-            bossbar_title(&game)
+            bossbar_title(&game, PREPARATION)
         );
-        for _ in 0..60 {
-            game.tick();
-        }
-        assert_eq!(bossbar_progress(&game), 0.0);
     }
 
     #[test]

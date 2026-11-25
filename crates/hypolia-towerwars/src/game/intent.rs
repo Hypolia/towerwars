@@ -6,6 +6,8 @@ use crate::sim::Seat;
 pub enum Intent {
     Broadcast(String),
     Tell { player: PlayerId, text: String },
+    Welcome { player: PlayerId },
+    CountdownBeat { seconds: u32 },
     Enroll { player: PlayerId },
     Unenroll { player: PlayerId },
     Lobby { player: PlayerId },

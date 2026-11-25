@@ -366,6 +366,7 @@ fn mock_orchestrator_router(state: SharedOrchestrator) -> Router {
                     match guard.expected_players {
                         Some(expected_players) => Json(HeartbeatResponse {
                             expected_players: Some(expected_players),
+                            teams: Vec::new(),
                         })
                         .into_response(),
                         None => StatusCode::NO_CONTENT.into_response(),
@@ -475,6 +476,7 @@ struct Setup {
     countdown_ticks: u32,
     end_delay_ticks: u32,
     expected_players: Option<u32>,
+    bots: bool,
 }
 
 impl Default for Setup {
@@ -485,6 +487,7 @@ impl Default for Setup {
             countdown_ticks: 8,
             end_delay_ticks: 6,
             expected_players: Some(4),
+            bots: false,
         }
     }
 }
@@ -542,6 +545,8 @@ fn start_with(spectators: &[&str], setup: Setup) -> Env {
         end_delay_ticks: setup.end_delay_ticks,
         seed: Some(5),
         decor: false,
+        bots: setup.bots,
+        preparation_ticks: 0,
         ..TowerWarsConfig::default()
     };
     let plugin = TowerWarsPlugin::new(config);
@@ -601,7 +606,7 @@ fn towerwars_full_lifecycle_orchestrator_countdown_play_forfeit_and_report() {
                 .any(|hb| hb.phase == ServerPhase::Starting)
                 && guard.heartbeats.iter().any(|hb| {
                     hb.phase == ServerPhase::Waiting
-                        && hb.max_players == 6
+                        && hb.max_players == 12
                         && hb.kind == SERVER_KIND
                 })
         });
@@ -664,13 +669,13 @@ fn towerwars_full_lifecycle_orchestrator_countdown_play_forfeit_and_report() {
     );
     game.place_tower(alice, TowerKind::Archer, (2, 4))
         .expect("tower");
-    assert_eq!(gold(&game, alice), Some(50));
+    assert_eq!(gold(&game, alice), Some(40));
     assert_eq!(
         game.place_tower(alice, TowerKind::Archer, (2, 4)),
-        Err("§cCette case est déjà occupée.")
+        Err("§cPas assez d'or.")
     );
     game.send_mob(alice, MobKind::Silverfish, 1).expect("send");
-    assert_eq!(gold(&game, alice), Some(35));
+    assert_eq!(gold(&game, alice), Some(25));
     assert_eq!(
         game.send_mob(alice, MobKind::Silverfish, 11),
         Err("§cPlus de charge pour ce mob, patientez.")
@@ -1117,12 +1122,13 @@ fn in_teams_the_teammate_keeps_playing_when_a_partner_leaves() {
 }
 
 #[test]
-fn a_solo_expectation_starts_the_match_at_once_with_three_bots() {
+fn with_bots_enabled_a_solo_expectation_starts_at_once_against_three_bots() {
     let mut env = start_with(
         &[],
         Setup {
             countdown_ticks: ROOMY,
             expected_players: Some(1),
+            bots: true,
             ..Setup::default()
         },
     );

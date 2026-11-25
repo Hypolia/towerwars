@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod bench;
 mod combat;
 mod economy;
 mod event;

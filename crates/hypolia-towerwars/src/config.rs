@@ -2,7 +2,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::domain::{GameMode, TICKS_PER_SECOND};
+use crate::domain::{GameMode, PREPARATION_SECS, TICKS_PER_SECOND};
 use crate::map::Map;
 
 const DEFAULT_SERVER_ID: &str = "towerwars-1";
@@ -11,7 +11,7 @@ const DEFAULT_END_DELAY_SECS: u32 = 10;
 const DEFAULT_HEARTBEAT_MS: u64 = 2000;
 const MIN_HEARTBEAT_MS: u64 = 500;
 const DEFAULT_MIN_PLAYERS: usize = 1;
-const DEFAULT_MAX_PLAYERS: usize = 6;
+const DEFAULT_MAX_PLAYERS: usize = 12;
 
 #[derive(Debug, Clone)]
 pub struct TowerWarsConfig {
@@ -30,6 +30,8 @@ pub struct TowerWarsConfig {
     pub version: Option<String>,
     pub decor: bool,
     pub world_prebuilt: bool,
+    pub bots: bool,
+    pub preparation_ticks: u32,
 }
 
 impl Default for TowerWarsConfig {
@@ -50,6 +52,8 @@ impl Default for TowerWarsConfig {
             version: None,
             decor: true,
             world_prebuilt: false,
+            bots: false,
+            preparation_ticks: PREPARATION_SECS * TICKS_PER_SECOND,
         }
     }
 }
@@ -90,7 +94,7 @@ impl TowerWarsConfig {
         let max_players = get("TOWERWARS_MAX_PLAYERS")
             .and_then(|raw| raw.parse::<usize>().ok())
             .unwrap_or(DEFAULT_MAX_PLAYERS)
-            .min(mode.max_players())
+            .min(GameMode::Teams.max_players())
             .max(min_players);
         let secs = |name: &str, default: u32| {
             get(name)
@@ -118,8 +122,12 @@ impl TowerWarsConfig {
             world_prebuilt: get("TOWERWARS_WORLD_PREBUILT")
                 .and_then(|raw| parse_bool(&raw))
                 .unwrap_or(false),
+            bots: get("TOWERWARS_BOTS")
+                .and_then(|raw| parse_bool(&raw))
+                .unwrap_or(false),
             seed: get("TOWERWARS_SEED").and_then(|raw| raw.parse::<u64>().ok()),
             countdown_ticks: secs("TOWERWARS_COUNTDOWN_SECS", DEFAULT_COUNTDOWN_SECS),
+            preparation_ticks: secs("TOWERWARS_PREPARATION_SECS", PREPARATION_SECS),
             end_delay_ticks: secs("TOWERWARS_END_DELAY_SECS", DEFAULT_END_DELAY_SECS),
             orchestrator_url,
             mode,
@@ -174,7 +182,9 @@ mod tests {
         let config = config(&[]);
         assert_eq!(config.server_id, "towerwars-1");
         assert_eq!(config.min_players, 1);
-        assert_eq!(config.max_players, 6);
+        assert_eq!(config.max_players, 12);
+        assert!(!config.bots);
+        assert_eq!(config.preparation_ticks, 20 * 20);
         assert_eq!(config.countdown_ticks, 15 * 20);
         assert_eq!(config.end_delay_ticks, 10 * 20);
         assert_eq!(config.heartbeat_interval, Duration::from_secs(2));
@@ -195,6 +205,12 @@ mod tests {
         ]);
         assert!(config.world_prebuilt);
         assert!(!config.decor);
+    }
+
+    #[test]
+    fn bots_only_play_when_asked() {
+        assert!(config(&[("TOWERWARS_BOTS", "true")]).bots);
+        assert!(!config(&[("TOWERWARS_BOTS", "nope")]).bots);
     }
 
     #[test]
@@ -240,7 +256,7 @@ mod tests {
         let low = config(&[("TOWERWARS_MIN_PLAYERS", "0")]);
         assert_eq!(low.min_players, 1);
         let high = config(&[("TOWERWARS_MAX_PLAYERS", "40")]);
-        assert_eq!(high.max_players, 6);
+        assert_eq!(high.max_players, 12);
         let inverted = config(&[
             ("TOWERWARS_MIN_PLAYERS", "6"),
             ("TOWERWARS_MAX_PLAYERS", "5"),

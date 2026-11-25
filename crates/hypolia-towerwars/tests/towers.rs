@@ -7,12 +7,12 @@ use hypolia_towerwars::domain::{
 use hypolia_towerwars::sim::{Event, Match, Seat};
 
 const COSTS: [(TowerKind, [u32; 4]); 7] = [
-    (TowerKind::Archer, [50, 100, 250, 600]),
-    (TowerKind::Ice, [75, 150, 350, 800]),
-    (TowerKind::Mage, [100, 220, 480, 1100]),
+    (TowerKind::Archer, [60, 100, 250, 600]),
+    (TowerKind::Ice, [60, 120, 280, 800]),
+    (TowerKind::Mage, [100, 180, 380, 900]),
     (TowerKind::Cannon, [125, 275, 600, 1400]),
     (TowerKind::Tesla, [150, 320, 700, 1600]),
-    (TowerKind::Slime, [120, 260, 550, 1250]),
+    (TowerKind::Slime, [100, 200, 450, 1250]),
     (TowerKind::Beacon, [200, 450, 950, 2000]),
 ];
 
@@ -59,13 +59,13 @@ fn totals_invested_per_path_match_the_design() {
             .map(|step| kind.stats(*step).cost)
             .sum()
     };
-    assert_eq!(total(TowerKind::Archer, Level::T3), 400);
-    assert_eq!(total(TowerKind::Archer, Level::T4(Branch::A)), 1000);
-    assert_eq!(total(TowerKind::Ice, Level::T4(Branch::B)), 1375);
-    assert_eq!(total(TowerKind::Mage, Level::T4(Branch::A)), 1900);
+    assert_eq!(total(TowerKind::Archer, Level::T3), 410);
+    assert_eq!(total(TowerKind::Archer, Level::T4(Branch::A)), 1010);
+    assert_eq!(total(TowerKind::Ice, Level::T4(Branch::B)), 1260);
+    assert_eq!(total(TowerKind::Mage, Level::T4(Branch::A)), 1560);
     assert_eq!(total(TowerKind::Cannon, Level::T4(Branch::B)), 2400);
     assert_eq!(total(TowerKind::Tesla, Level::T4(Branch::A)), 2770);
-    assert_eq!(total(TowerKind::Slime, Level::T4(Branch::B)), 2180);
+    assert_eq!(total(TowerKind::Slime, Level::T4(Branch::B)), 2000);
     assert_eq!(total(TowerKind::Beacon, Level::T4(Branch::B)), 3600);
 }
 
@@ -90,7 +90,7 @@ fn catalog_combat_numbers_follow_the_design() {
     assert_eq!(
         TowerKind::Mage.stats(Level::T1).effect,
         TowerEffect::Burn {
-            dps: 5.0,
+            dps: 8.0,
             ticks: 60
         }
     );
@@ -127,10 +127,10 @@ fn placing_spends_gold_and_creates_a_first_priority_tower() {
     let owner = player(0);
     let cell = buildable_cell(0, 5);
     let id = game.place(owner, TowerKind::Archer, cell).expect("place");
-    assert_eq!(game.gold(owner), Some(Gold::new(50)));
+    assert_eq!(game.gold(owner), Some(Gold::new(40)));
     let tower = game.lane(lane(0)).tower(id).expect("tower");
     assert_eq!(tower.priority, Priority::First);
-    assert_eq!(tower.invested, 50);
+    assert_eq!(tower.invested, 60);
     assert_eq!(tower.cooldown_ticks, 0);
     assert_eq!(tower.owner, owner);
     assert_eq!(
@@ -152,9 +152,16 @@ fn an_out_of_bounds_or_occupied_cell_is_refused_without_spending_gold() {
     assert_eq!(game.gold(owner), Some(Gold::new(100)));
     let cell = buildable_cell(0, 0);
     game.place(owner, TowerKind::Archer, cell).expect("place");
+    assert_eq!(
+        game.place(owner, TowerKind::Archer, cell),
+        Err(SimError::NotEnoughGold)
+    );
+    run(&mut game, 240);
+    let gold = game.gold(owner).expect("gold");
+    assert!(gold.get() >= 60, "{gold:?}");
     let result = game.place(owner, TowerKind::Archer, cell);
     assert_eq!(result, Err(SimError::OccupiedCell));
-    assert_eq!(game.gold(owner), Some(Gold::new(50)));
+    assert_eq!(game.gold(owner), Some(gold));
 }
 
 #[test]
@@ -187,14 +194,14 @@ fn selling_refunds_eighty_percent_and_frees_the_cell() {
     let owner = player(0);
     let cell = buildable_cell(0, 0);
     let id = game.place(owner, TowerKind::Ice, cell).expect("place");
-    assert_eq!(game.sell(owner, id), Ok(60));
-    assert_eq!(game.gold(owner), Some(Gold::new(85)));
+    assert_eq!(game.sell(owner, id), Ok(48));
+    assert_eq!(game.gold(owner), Some(Gold::new(88)));
     assert!(game.lane(lane(0)).tower(id).is_none());
     assert!(game.place(owner, TowerKind::Archer, cell).is_ok());
     assert!(
         game.drain_events()
             .iter()
-            .any(|event| matches!(event, Event::TowerSold { refund: 60, .. }))
+            .any(|event| matches!(event, Event::TowerSold { refund: 48, .. }))
     );
 }
 
@@ -210,7 +217,7 @@ fn upgrading_without_gold_leaves_the_tower_unchanged() {
         game.lane(lane(0)).tower(id).expect("tower").level,
         Level::T1
     );
-    assert_eq!(game.gold(owner), Some(Gold::new(50)));
+    assert_eq!(game.gold(owner), Some(Gold::new(40)));
 }
 
 #[test]
@@ -268,12 +275,12 @@ fn teammates_share_the_lane_but_not_the_gold() {
     let id = game
         .place(first, TowerKind::Archer, buildable_cell(0, 0))
         .expect("place");
-    assert_eq!(game.gold(first), Some(Gold::new(50)));
+    assert_eq!(game.gold(first), Some(Gold::new(40)));
     game.set_priority(second, id, Priority::Weakest)
         .expect("priority");
-    assert_eq!(game.sell(second, id), Ok(40));
-    assert_eq!(game.gold(second), Some(Gold::new(140)));
-    assert_eq!(game.gold(first), Some(Gold::new(50)));
+    assert_eq!(game.sell(second, id), Ok(48));
+    assert_eq!(game.gold(second), Some(Gold::new(148)));
+    assert_eq!(game.gold(first), Some(Gold::new(40)));
 }
 
 #[test]

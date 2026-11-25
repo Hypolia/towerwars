@@ -194,7 +194,7 @@ fn spec_tw_13_armor_reduces_physical_but_not_magic() {
     add_tower(&mut world, TowerKind::Mage, Level::T1, (10, 2));
     let zombie = add_mob(&mut world, MobKind::Zombie, 10.0);
     step_towers(&mut world);
-    assert!(near(mob(&world, zombie).hp, 80.0));
+    assert!(near(mob(&world, zombie).hp, 95.0 - 18.0));
 }
 
 #[test]
@@ -269,7 +269,7 @@ fn permafrost_makes_targets_vulnerable() {
 }
 
 #[test]
-fn spec_tw_15_a_mage_burns_five_per_second_for_sixty_ticks() {
+fn spec_tw_15_a_mage_burns_eight_per_second_for_sixty_ticks() {
     let mut world = world();
     add_tower(&mut world, TowerKind::Mage, Level::T1, (10, 2));
     let target = add_mob(&mut world, MobKind::Zombie, 10.0);
@@ -277,7 +277,7 @@ fn spec_tw_15_a_mage_burns_five_per_second_for_sixty_ticks() {
     assert_eq!(
         mob(&world, target).statuses.burns,
         vec![Burn {
-            dps: 5.0,
+            dps: 8.0,
             remaining: 60
         }]
     );
@@ -285,7 +285,7 @@ fn spec_tw_15_a_mage_burns_five_per_second_for_sixty_ticks() {
     for _ in 0..60 {
         step_statuses(&mut world);
     }
-    assert!(near(after_hit - mob(&world, target).hp, 15.0));
+    assert!(near(after_hit - mob(&world, target).hp, 24.0));
     assert!(mob(&world, target).statuses.burns.is_empty());
 }
 
@@ -296,7 +296,7 @@ fn spec_tw_15_a_blaze_is_immune_to_burn() {
     let blaze = add_mob(&mut world, MobKind::Blaze, 10.0);
     step_towers(&mut world);
     assert!(mob(&world, blaze).statuses.burns.is_empty());
-    assert!(near(mob(&world, blaze).hp, 550.0 - 15.0));
+    assert!(near(mob(&world, blaze).hp, 550.0 - 18.0));
 }
 
 #[test]
@@ -316,7 +316,7 @@ fn a_burning_mob_keeps_one_entry_refreshed_to_the_stronger_values() {
     assert_eq!(
         burns,
         &vec![Burn {
-            dps: 25.0,
+            dps: 35.0,
             remaining: 80
         }]
     );
@@ -408,9 +408,9 @@ fn spec_tw_16_a_tesla_chains_through_three_distinct_mobs() {
     let c = add_mob(&mut world, MobKind::Silverfish, 14.0);
     let d = add_mob(&mut world, MobKind::Silverfish, 16.0);
     step_towers(&mut world);
-    for index in [a, b, c] {
-        assert_eq!(mob(&world, index).hp, 15.0);
-    }
+    assert!(near(mob(&world, a).hp, 35.0 - 20.0));
+    assert!(near(mob(&world, b).hp, 35.0 - 20.0 * 0.7));
+    assert!(near(mob(&world, c).hp, 35.0 - 20.0 * 0.7 * 0.7));
     assert_eq!(mob(&world, d).hp, 35.0);
     let points = world.events.iter().find_map(|event| match event {
         Event::Chain { points, .. } => Some(points.len()),

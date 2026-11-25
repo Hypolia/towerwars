@@ -20,6 +20,7 @@ pub fn message(error: &SimError) -> &'static str {
         SimError::PlayerLeft => "§cVous avez quitté la partie.",
         SimError::MatchEnded => "§cLa partie est terminée.",
         SimError::NotEnoughPlayers => "§cJoueurs insuffisants pour ce mode.",
+        SimError::Preparing => "§cPréparation : les envois ouvrent bientôt.",
         SimError::InvalidSeating => "§cRépartition des joueurs invalide.",
         SimError::LanesSaturated => "§cLes voies adverses sont pleines, patientez.",
     }
@@ -50,6 +51,7 @@ mod tests {
             SimError::PlayerLeft,
             SimError::MatchEnded,
             SimError::NotEnoughPlayers,
+            SimError::Preparing,
             SimError::InvalidSeating,
             SimError::LanesSaturated,
         ];

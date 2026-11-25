@@ -19,6 +19,9 @@ pub const fn mob_name(kind: MobKind) -> &'static str {
         MobKind::Warden => "Warden",
         MobKind::Wither => "Wither",
         MobKind::MediumSlime => "Slime moyen",
+        MobKind::Rabbit => "Lapin",
+        MobKind::Fox => "Renard",
+        MobKind::SkeletonHorse => "Cheval squelette",
     }
 }
 

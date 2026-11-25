@@ -18,6 +18,8 @@ pub const MAX_ARMOR: f32 = 0.9;
 pub const TIER_UNLOCK_TICKS: [u64; 4] = [0, 3_000, 6_600, 10_800];
 pub const MAX_INCOME: u32 = 10_000;
 pub const MAX_MOBS_PER_LANE: usize = 80;
+pub const MIN_LANES: usize = 2;
+pub const PREPARATION_SECS: u32 = 20;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameMode {
@@ -42,7 +44,7 @@ impl GameMode {
 
     pub const fn min_players(self) -> usize {
         match self {
-            Self::Solo => 4,
+            Self::Solo => 2,
             Self::Teams => 4,
         }
     }

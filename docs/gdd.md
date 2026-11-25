@@ -6,8 +6,10 @@ Source de vérité des valeurs (coûts, PV, vitesses, portées). Les règles de 
 
 | Mode | Joueurs | Voies | PV de départ |
 | :--- | :--- | :--- | :--- |
-| Solo | 6 (min. 4) | 6 voies indépendantes | 20 |
-| Teams | 12 (6 équipes de 2) | 6 voies partagées (or individuel, limite de tours partagée) | 25 |
+| Solo | 2 à 6 | une voie par joueur | 20 |
+| Duo (`Teams`) | 4 à 12 (2 à 6 équipes de 2) | une voie par équipe (or individuel, limite de tours partagée) | 25 |
+
+Pas de bots en production : une partie demande au moins 2 voies occupées par des joueurs. Les 20 premières secondes sont une préparation : personne ne peut envoyer de mob.
 
 - Or de départ : 100. Income de départ : 10 or toutes les 6 s (120 ticks).
 - Acheter un mob l'envoie à tous les adversaires encore en vie. Acheter un mob est le seul moyen d'augmenter l'income.
@@ -25,7 +27,7 @@ Source de vérité des valeurs (coûts, PV, vitesses, portées). Les règles de 
 ### Archer (monocible)
 | Niveau | Coût | Dégâts | Cadence | Portée |
 |---|---|---|---|---|
-| T1 | 50 | 12 | 1.0 s | 8 |
+| T1 | 60 | 12 | 1.0 s | 8 |
 | T2 | 100 | 26 | 0.9 s | 9 |
 | T3 | 250 | 60 | 0.8 s | 10 |
 | T4-A Marksman | 600 | 180 | 1.2 s | 14 | 25 % de critique (x2.5) |
@@ -34,20 +36,20 @@ Source de vérité des valeurs (coûts, PV, vitesses, portées). Les règles de 
 ### Ice (contrôle)
 | Niveau | Coût | Dégâts | Ralentissement | Cadence | Rayon AoE |
 |---|---|---|---|---|---|
-| T1 | 75 | 5 | 25 % (2.5 s) | 1.5 s | 3.5 |
-| T2 | 150 | 12 | 35 % (3.0 s) | 1.4 s | 4.0 |
-| T3 | 350 | 25 | 45 % (3.5 s) | 1.3 s | 4.5 |
+| T1 | 60 | 5 | 25 % (2.5 s) | 1.5 s | 3.5 |
+| T2 | 120 | 12 | 35 % (3.0 s) | 1.4 s | 4.0 |
+| T3 | 280 | 25 | 45 % (3.5 s) | 1.3 s | 4.5 |
 - T4-A Permafrost (800) : ralentissement 60 % (4.0 s), les cibles ralenties subissent +15 % de dégâts de toutes sources.
 - T4-B Blizzard (800) : 65 dégâts/s en aura continue autour de la tour, 10 % de chance de gel complet (0.75 s d'étourdissement, immunité interne 4 s).
 
 ### Mage (dégâts magiques / DoT, ignore l'armure)
 | Niveau | Coût | Dégâts | Brûlure | Cadence | Portée |
 |---|---|---|---|---|---|
-| T1 | 100 | 15 | 5/s (3 s) | 1.2 s | 8 |
-| T2 | 220 | 35 | 12/s (3 s) | 1.1 s | 9 |
-| T3 | 480 | 80 | 25/s (4 s) | 1.0 s | 10 |
-- T4-A Pyromancer (1100) : explosion de feu (AoE 2.5), brûlure cumulable 3 fois (45/s par stack).
-- T4-B Necromancer (1100) : maudit la cible ; si elle meurt maudite, elle explose pour 30 % de ses PV max en dégâts de zone.
+| T1 | 100 | 18 | 8/s (3 s) | 1.2 s | 8 |
+| T2 | 180 | 42 | 18/s (3 s) | 1.1 s | 9 |
+| T3 | 380 | 95 | 35/s (4 s) | 1.0 s | 10 |
+- T4-A Pyromancer (900, 95 dégâts) : explosion de feu (AoE 2.5), brûlure cumulable 3 fois (45/s par stack).
+- T4-B Necromancer (900, 95 dégâts) : maudit la cible ; si elle meurt maudite, elle explose pour 30 % de ses PV max en dégâts de zone.
 
 ### Cannon (artillerie AoE)
 | Niveau | Coût | Dégâts | Rayon AoE | Cadence | Portée |
@@ -59,20 +61,21 @@ Source de vérité des valeurs (coûts, PV, vitesses, portées). Les règles de 
 - T4-B Cluster Bomb (1400) : l'impact génère 4 sous-munitions de 110 dégâts, rayon 2.
 
 ### Tesla (chaîne)
+Chaque rebond fait 30 % de dégâts de moins que le précédent (x1, x0.7, x0.49...).
 | Niveau | Coût | Dégâts | Cibles | Rebond | Cadence | Portée |
 |---|---|---|---|---|---|---|
 | T1 | 150 | 20 | 3 | 3.5 | 1.1 s | 7.5 |
 | T2 | 320 | 45 | 4 | 4.0 | 1.0 s | 8.5 |
 | T3 | 700 | 100 | 5 | 4.5 | 0.9 s | 9.5 |
-- T4-A Arc Reactor (1600) : jusqu'à 9 rebonds sans perte (190 par cible).
+- T4-A Arc Reactor (1600) : jusqu'à 9 rebonds (190 sur la première cible, puis -30 % par rebond).
 - T4-B Overload (1600) : 3 rebonds, 320 dégâts, étourdit la cible principale 0.4 s toutes les 3 attaques.
 
 ### Slime / Acid (corrosion)
 | Niveau | Coût | Dégâts | Armure | Cadence | Portée |
 |---|---|---|---|---|---|
-| T1 | 120 | 14 | -15 % (4 s) | 1.3 s | 7.5 |
-| T2 | 260 | 32 | -25 % (4 s) | 1.2 s | 8.5 |
-| T3 | 550 | 75 | -35 % (5 s) | 1.1 s | 9.5 |
+| T1 | 100 | 14 | -15 % (4 s) | 1.3 s | 7.5 |
+| T2 | 200 | 32 | -25 % (4 s) | 1.2 s | 8.5 |
+| T3 | 450 | 75 | -35 % (5 s) | 1.1 s | 9.5 |
 - T4-A Corrosive Pool (1250) : flaque (rayon 3, 4 s) à 60/s, armure -50 %.
 - T4-B Toxic Mutator (1250) : dégâts bonus = 2.5 % des PV actuels de la cible par coup.
 
@@ -100,6 +103,7 @@ Booste les tours alliées dans son rayon ; au plus 2 beacons cumulés sur une m�
 | Zombie | 30 | +4 | 95 | 2.4 | 1 | armure 10 % |
 | Endermite | 50 | +5 | 65 | 4.6 | 1 | rush (très rapide) |
 | Skeleton | 80 | +9 | 180 | 2.7 | 1 | esquive 15 % des projectiles monocibles |
+| Lapin | 40 | +4 | 40 | 6.2 | 1 | le plus rapide du tier 1 |
 
 ### Tier 2
 | Mob | Coût | Income | PV | Vitesse | Dégâts | Capacité |
@@ -108,6 +112,7 @@ Booste les tours alliées dans son rayon ; au plus 2 beacons cumulés sur une m�
 | Creeper | 200 | +21 | 420 | 2.5 | 2 | à sa mort, étourdit les tours à 2.5 blocs pendant 1.0 s |
 | Blaze | 320 | +32 | 550 | 3.0 | 2 | immunisé feu / brûlure |
 | Witch | 450 | +44 | 680 | 2.6 | 2 | soigne les mobs alliés à 3 blocs (30 PV/s) |
+| Renard | 260 | +27 | 380 | 3.6 | 1 | sprinte (x1.8, soit 6.5 b/s) tant qu'il n'a pas été touché |
 
 ### Tier 3
 | Mob | Coût | Income | PV | Vitesse | Dégâts | Capacité |
@@ -116,6 +121,7 @@ Booste les tours alliées dans son rayon ; au plus 2 beacons cumulés sur une m�
 | Piglin Brute | 1000 | +90 | 1850 | 2.8 | 3 | armure 25 %, +30 % de vitesse sous 40 % PV |
 | Enderman | 1450 | +125 | 1600 | 3.5 | 3 | blink : téléportation de 4 blocs vers l'avant sous 50 % PV |
 | Ghast | 2000 | +170 | 2400 | 2.4 | 3 | volant : ignore les flaques, vulnérable Archer/Tesla |
+| Cheval squelette | 1250 | +108 | 1500 | 5.0 | 3 | résiste à 60 % des ralentissements |
 
 ### Tier 4
 | Mob | Coût | Income | PV | Vitesse | Dégâts | Capacité |

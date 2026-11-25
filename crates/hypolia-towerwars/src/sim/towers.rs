@@ -319,10 +319,10 @@ mod tests {
         let id = place(&mut world, pid(0), TowerKind::Archer, (3, 2)).unwrap();
         upgrade(&mut world, pid(0), id, None).unwrap();
         upgrade(&mut world, pid(0), id, None).unwrap();
-        assert_eq!(gold_of(&world, pid(0)), 600);
+        assert_eq!(gold_of(&world, pid(0)), 590);
         let refund = sell(&mut world, pid(0), id).unwrap();
-        assert_eq!(refund, 320);
-        assert_eq!(gold_of(&world, pid(0)), 920);
+        assert_eq!(refund, 328);
+        assert_eq!(gold_of(&world, pid(0)), 918);
         assert!(world.lane(LaneId::try_from(0).unwrap()).tower(id).is_none());
         assert_eq!(
             world.lane(LaneId::try_from(0).unwrap()).tower_at((3, 2)),
@@ -344,11 +344,11 @@ mod tests {
         let id = place(&mut world, pid(0), TowerKind::Archer, (3, 2)).unwrap();
         upgrade(&mut world, pid(1), id, None).unwrap();
         assert_eq!(gold_of(&world, pid(1)), 900);
-        assert_eq!(gold_of(&world, pid(0)), 950);
+        assert_eq!(gold_of(&world, pid(0)), 940);
         set_priority(&mut world, pid(1), id, Priority::Weakest).unwrap();
-        assert_eq!(sell(&mut world, pid(1), id), Ok(120));
-        assert_eq!(gold_of(&world, pid(1)), 1020);
-        assert_eq!(gold_of(&world, pid(0)), 950);
+        assert_eq!(sell(&mut world, pid(1), id), Ok(128));
+        assert_eq!(gold_of(&world, pid(1)), 1028);
+        assert_eq!(gold_of(&world, pid(0)), 940);
     }
 
     #[test]
@@ -415,12 +415,12 @@ mod tests {
         );
         let lane = world.lane(LaneId::try_from(0).unwrap());
         assert_eq!(lane.tower(id).unwrap().level, Level::T4(Branch::A));
-        assert_eq!(lane.tower(id).unwrap().invested, 1000);
+        assert_eq!(lane.tower(id).unwrap().invested, 1010);
     }
 
     #[test]
     fn an_upgrade_without_gold_changes_nothing() {
-        let mut world = world_with_gold(60);
+        let mut world = world_with_gold(70);
         let id = place(&mut world, pid(0), TowerKind::Archer, (3, 2)).unwrap();
         assert_eq!(
             upgrade(&mut world, pid(0), id, None),
@@ -601,6 +601,10 @@ mod combat_tests {
         world.lanes[0].mobs.len() - 1
     }
 
+    fn near(left: f32, right: f32) -> bool {
+        (left - right).abs() < 1e-4
+    }
+
     fn chain_of(bounce_gap: f32) -> (World, [usize; 3]) {
         let mut world = world();
         let tesla = add_tower(&mut world, TowerKind::Tesla, Level::T1, (10, 2));
@@ -617,7 +621,7 @@ mod combat_tests {
         let (world, [first, second, third]) = chain_of(3.6);
         let hp = |index: usize| world.lanes[0].mobs[index].hp;
         assert_eq!(hp(first), 15.0);
-        assert_eq!(hp(second), 15.0);
+        assert!(near(hp(second), 35.0 - 20.0 * 0.7));
         assert_eq!(hp(third), 35.0);
     }
 
@@ -626,8 +630,8 @@ mod combat_tests {
         let (world, [first, second, third]) = chain_of(3.4);
         let hp = |index: usize| world.lanes[0].mobs[index].hp;
         assert_eq!(hp(first), 15.0);
-        assert_eq!(hp(second), 15.0);
-        assert_eq!(hp(third), 15.0);
+        assert!(near(hp(second), 35.0 - 20.0 * 0.7));
+        assert!(near(hp(third), 35.0 - 20.0 * 0.7 * 0.7));
     }
 
     fn archer_cooldown_after_first_shot(with_beacon: bool) -> u16 {

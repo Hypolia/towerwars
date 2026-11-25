@@ -38,6 +38,9 @@ pub const fn mob_material(kind: MobKind) -> Material {
         MobKind::Ravager => Material::RavagerSpawnEgg,
         MobKind::Warden => Material::WardenSpawnEgg,
         MobKind::Wither => Material::WitherSpawnEgg,
+        MobKind::Rabbit => Material::RabbitSpawnEgg,
+        MobKind::Fox => Material::FoxSpawnEgg,
+        MobKind::SkeletonHorse => Material::SkeletonHorseSpawnEgg,
     }
 }
 
@@ -59,6 +62,9 @@ pub const fn mob_entity(kind: MobKind) -> EntityType {
         MobKind::Ravager => EntityType::Ravager,
         MobKind::Warden => EntityType::Warden,
         MobKind::Wither => EntityType::WitherSkeleton,
+        MobKind::Rabbit => EntityType::Rabbit,
+        MobKind::Fox => EntityType::Fox,
+        MobKind::SkeletonHorse => EntityType::SkeletonHorse,
     }
 }
 
@@ -77,6 +83,9 @@ pub fn mob_scale(kind: MobKind) -> f64 {
         MobKind::Ravager | MobKind::Warden => 0.6,
         MobKind::Wither => 1.1,
         MobKind::Ghast => 0.35,
+        MobKind::Rabbit => 1.2,
+        MobKind::Fox => 0.9,
+        MobKind::SkeletonHorse => 0.7,
     }
 }
 

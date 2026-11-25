@@ -9,8 +9,8 @@ use rspigot_plugin::{
     Attribute, Billboard, BlockDisplay, BlockState, BossBar, ChunkLoad, CustomInventory,
     DisplayProps, DisplaySpec, Effect, EffectType, Entity, EntityType, Error, GameMode,
     InteractionBox, InventorySlot, ItemStack, Location, Material, Particle, ParticleBurst, Player,
-    Position, Rotation, Server, SlotItem, SoundCue, TextDisplay, Title, Transformation, Uuid,
-    Vector,
+    Position, Rotation, Server, SlotItem, Sound, SoundCue, TextDisplay, Title, Transformation,
+    Uuid, Vector,
 };
 use tokio::sync::{Notify, mpsc};
 use tokio::task::JoinHandle;
@@ -23,6 +23,7 @@ use super::menus::{Menu, MenuAction, build_menu, lane_menu, send_count, send_men
 use super::messages::message;
 use super::names::{next_priority, tower_name};
 use super::notices::{Audience, notices, victory_subtitle};
+use super::onboarding;
 use super::render::{
     MIN_AIM_CHANGE, MobOp, MobSnapshot, MobTrack, RING_POINTS, Shot, TowerOp, death_shot,
     diff_mobs, leak_shot, mob_entity, mob_scale, range_color, ring_points, shots, snapshots,
@@ -392,10 +393,18 @@ impl Game {
     }
 
     async fn apply_heartbeat_response(&self, response: Option<HeartbeatResponse>) {
-        let Some(expected) = response.and_then(|response| response.expected_players) else {
+        let Some(response) = response else {
             return;
         };
-        let intents = self.lock().session.set_expected(Some(expected));
+        let Some(expected) = response.expected_players else {
+            return;
+        };
+        let lineup = response
+            .teams
+            .iter()
+            .map(|team| team.iter().map(|uuid| player_id(*uuid)).collect())
+            .collect();
+        let intents = self.lock().session.set_expected(Some(expected), lineup);
         self.run(intents).await;
         self.check_phase_changed();
     }
@@ -834,6 +843,23 @@ impl Game {
                     player.message.send(text);
                 }
             }
+            Intent::Welcome { player } => {
+                if let Some(player) = self.player(player) {
+                    self.welcome(&player);
+                }
+            }
+            Intent::CountdownBeat { seconds } => {
+                for player in self.everyone() {
+                    player
+                        .title
+                        .send(Title::new(onboarding::countdown_title(seconds).as_str()));
+                    player.sound.play(
+                        SoundCue::new(Sound::BlockNoteBlockPling)
+                            .volume(0.8)
+                            .pitch(if seconds == 1 { 2.0 } else { 1.0 }),
+                    );
+                }
+            }
             Intent::Enroll { player } => {
                 if let Some(player) = self.player(player) {
                     self.enroll(&player);
@@ -930,6 +956,51 @@ impl Game {
         self.teleport(player, anchor).await;
         player.abilities.set_allow_flight(true);
         player.abilities.set_flying(true);
+        self.announce_start(player, lane);
+    }
+
+    const fn preparation_secs(&self) -> u32 {
+        self.config
+            .preparation_ticks
+            .div_ceil(crate::domain::TICKS_PER_SECOND)
+    }
+
+    fn welcome(&self, player: &Player) {
+        let mode = self.lock().session.match_mode();
+        player
+            .title
+            .send(Title::new(onboarding::WELCOME_TITLE).subtitle(onboarding::WELCOME_SUBTITLE));
+        for line in onboarding::welcome_lines(mode) {
+            player.message.send(line);
+        }
+    }
+
+    fn announce_start(&self, player: &Player, lane: LaneId) {
+        let id = player_id(player.uuid);
+        let teammate = {
+            let state = self.lock();
+            state
+                .session
+                .game()
+                .and_then(|game| {
+                    game.lane(lane)
+                        .owners
+                        .iter()
+                        .find(|owner| **owner != id)
+                        .copied()
+                })
+                .and_then(|other| state.name_of(other))
+        };
+        player.title.send(
+            Title::new(onboarding::START_TITLE)
+                .subtitle(onboarding::start_subtitle(self.preparation_secs()).as_str()),
+        );
+        for line in onboarding::start_lines(teammate.as_deref(), self.preparation_secs()) {
+            player.message.send(line);
+        }
+        player
+            .sound
+            .play(SoundCue::new(Sound::EntityPlayerLevelup).volume(0.8));
     }
 
     async fn watch(&self, player: &Player) {
@@ -1035,11 +1106,12 @@ impl Game {
             ..
         } = &mut *state;
         let name_of = |id: PlayerId| names.get(&id).cloned();
+        let preparation = u64::from(self.config.preparation_ticks);
         match (session.stage(), session.game()) {
             (_, Some(game)) => {
                 hud.render(sidebar_lines(game, &name_of));
-                bar.set_title(bossbar_title(game));
-                bar.set_progress(bossbar_progress(game));
+                bar.set_title(bossbar_title(game, preparation));
+                bar.set_progress(bossbar_progress(game, preparation));
                 for (id, player) in players.iter() {
                     if let Some(line) = action_bar(game, *id) {
                         player.action_bar.send(line);
@@ -1635,7 +1707,13 @@ impl Game {
     }
 
     pub fn send_mob(&self, player: PlayerId, kind: MobKind, count: u8) -> Result<(), &'static str> {
-        self.command(|game| game.send(player, kind, count))
+        let preparation = u64::from(self.config.preparation_ticks);
+        self.command(|game| {
+            if game.elapsed() < preparation {
+                return Err(crate::domain::SimError::Preparing);
+            }
+            game.send(player, kind, count)
+        })
     }
 
     pub fn place_tower(

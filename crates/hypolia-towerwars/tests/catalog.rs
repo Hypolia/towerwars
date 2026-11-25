@@ -24,7 +24,7 @@ struct TowerRow {
     effect: TowerEffect,
 }
 
-const MOBS: [MobRow; 17] = [
+const MOBS: [MobRow; 20] = [
     MobRow {
         kind: MobKind::Silverfish,
         cost: 15,
@@ -246,13 +246,52 @@ const MOBS: [MobRow; 17] = [
         dodge: 0.0,
         flags: [false, false, false],
     },
+    MobRow {
+        kind: MobKind::Rabbit,
+        cost: 40,
+        income: 4,
+        hp: 40.0,
+        speed: 6.2,
+        damage: 1,
+        tier: 1,
+        armor: 0.0,
+        slow_resist: 0.0,
+        dodge: 0.0,
+        flags: [false, false, false],
+    },
+    MobRow {
+        kind: MobKind::Fox,
+        cost: 260,
+        income: 27,
+        hp: 380.0,
+        speed: 3.6,
+        damage: 1,
+        tier: 2,
+        armor: 0.0,
+        slow_resist: 0.0,
+        dodge: 0.0,
+        flags: [false, false, false],
+    },
+    MobRow {
+        kind: MobKind::SkeletonHorse,
+        cost: 1250,
+        income: 108,
+        hp: 1500.0,
+        speed: 5.0,
+        damage: 3,
+        tier: 3,
+        armor: 0.0,
+        slow_resist: 0.6,
+        dodge: 0.0,
+        flags: [false, false, false],
+    },
 ];
 
 const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Archer,
         level: Level::T1,
-        cost: 50,
+        cost: 60,
         damage: 12.0,
         cooldown: 20,
         range: 8.0,
@@ -300,7 +339,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Ice,
         level: Level::T1,
-        cost: 75,
+        cost: 60,
         damage: 5.0,
         cooldown: 30,
         range: 3.5,
@@ -313,7 +352,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Ice,
         level: Level::T2,
-        cost: 150,
+        cost: 120,
         damage: 12.0,
         cooldown: 28,
         range: 4.0,
@@ -326,7 +365,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Ice,
         level: Level::T3,
-        cost: 350,
+        cost: 280,
         damage: 25.0,
         cooldown: 26,
         range: 4.5,
@@ -367,43 +406,43 @@ const TOWERS: [TowerRow; 35] = [
         kind: TowerKind::Mage,
         level: Level::T1,
         cost: 100,
-        damage: 15.0,
+        damage: 18.0,
         cooldown: 24,
         range: 8.0,
         effect: TowerEffect::Burn {
-            dps: 5.0,
+            dps: 8.0,
             ticks: 60,
         },
     },
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T2,
-        cost: 220,
-        damage: 35.0,
+        cost: 180,
+        damage: 42.0,
         cooldown: 22,
         range: 9.0,
         effect: TowerEffect::Burn {
-            dps: 12.0,
+            dps: 18.0,
             ticks: 60,
         },
     },
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T3,
-        cost: 480,
-        damage: 80.0,
+        cost: 380,
+        damage: 95.0,
         cooldown: 20,
         range: 10.0,
         effect: TowerEffect::Burn {
-            dps: 25.0,
+            dps: 35.0,
             ticks: 80,
         },
     },
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T4(Branch::A),
-        cost: 1100,
-        damage: 80.0,
+        cost: 900,
+        damage: 95.0,
         cooldown: 20,
         range: 10.0,
         effect: TowerEffect::Pyro {
@@ -415,8 +454,8 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T4(Branch::B),
-        cost: 1100,
-        damage: 80.0,
+        cost: 900,
+        damage: 95.0,
         cooldown: 20,
         range: 10.0,
         effect: TowerEffect::Curse {
@@ -542,7 +581,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Slime,
         level: Level::T1,
-        cost: 120,
+        cost: 100,
         damage: 14.0,
         cooldown: 26,
         range: 7.5,
@@ -554,7 +593,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Slime,
         level: Level::T2,
-        cost: 260,
+        cost: 200,
         damage: 32.0,
         cooldown: 24,
         range: 8.5,
@@ -566,7 +605,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Slime,
         level: Level::T3,
-        cost: 550,
+        cost: 450,
         damage: 75.0,
         cooldown: 22,
         range: 9.5,
@@ -689,7 +728,7 @@ fn every_mob_matches_the_design_document() {
 }
 
 #[test]
-fn the_mob_table_covers_all_sixteen_sendable_kinds_and_the_medium_slime() {
+fn the_mob_table_covers_every_sendable_kind_and_the_medium_slime() {
     assert_eq!(MOBS.len(), SENDABLE_MOBS + 1);
     for kind in MobKind::SENDABLE {
         assert!(MOBS.iter().any(|row| row.kind == kind), "{kind:?}");

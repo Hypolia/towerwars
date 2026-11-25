@@ -3,8 +3,8 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::domain::{
-    Branch, GameMode, Gold, LANE_COUNT, LaneHp, LaneId, MobKind, PlayerId, Priority, SimError,
-    TowerId, TowerKind,
+    Branch, GameMode, Gold, LANE_COUNT, LaneHp, LaneId, MIN_LANES, MobKind, PlayerId, Priority,
+    SimError, TowerId, TowerKind,
 };
 use crate::map::{Map, MapError};
 
@@ -35,9 +35,6 @@ pub struct Match {
 
 impl Match {
     pub fn new(mode: GameMode, seed: u64, map: &Map, seats: &[Seat]) -> Result<Self, MatchError> {
-        if seats.len() < mode.min_players() {
-            return Err(SimError::NotEnoughPlayers.into());
-        }
         if seats.len() > mode.max_players() {
             return Err(SimError::InvalidSeating.into());
         }
@@ -48,6 +45,9 @@ impl Match {
                 return Err(SimError::InvalidSeating.into());
             }
             lane_owners.push(seat.player);
+        }
+        if owners.iter().filter(|lane| !lane.is_empty()).count() < MIN_LANES {
+            return Err(SimError::NotEnoughPlayers.into());
         }
         let mut lanes = Vec::with_capacity(LANE_COUNT);
         for id in LaneId::ALL {
@@ -166,6 +166,11 @@ impl Match {
 
     pub fn drain_events(&mut self) -> Vec<Event> {
         std::mem::take(&mut self.world.events)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn world_mut(&mut self) -> &mut World {
+        &mut self.world
     }
 
     pub fn world(&self) -> &World {
