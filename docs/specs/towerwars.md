@@ -257,3 +257,21 @@ Décisions prises après des parties de test en solo contre les bots. Mesures : 
 
 - `rspigot.ref` pointe sur le commit du tag `0.1.0` de rspigot (`103f2d34`), selon l'ADR 0010. Tout le workspace compile et passe clippy contre cette version.
 - Lobby : la sidebar et la tab list affichent la file TowerWars à côté de SheepWars, le pied de la tab list propose `/towerwars`, la description du menu Mini-Jeux annonce 1 à 4 joueurs, et le menu staff Serveurs indique le jeu de chaque serveur.
+
+## Amendement 2026-11-25 — Solo et Duo sans bots, arrivée, mobs rapides, équilibrage
+
+Remplace « les bots complètent jusqu'à 4 voies, toujours » et le menu Solo/Duo/Trio/Quatuor. Décision utilisateur.
+
+- Modes : `match_size` 1 = Solo (une voie par joueur, 2 à 6 joueurs), 2 = Duo (2 joueurs par voie, 2 à 6 équipes). Trio et Quatuor retirés (lobby et orchestrateur).
+- Orchestrateur : un groupe de mode part quand il atteint le maximum, ou quand il atteint le minimum et que le plus ancien attend depuis `TOWERWARS_GATHER_SECS` (20 s). Un groupe d'amis n'est jamais séparé ; en Duo, un groupe de 2 forme une équipe.
+- Protocole : `HeartbeatResponse.teams: Vec<Vec<Uuid>>` (une liste par voie, champ optionnel). Le plugin en déduit le mode de la partie (une équipe de 2 = Duo) et place chaque équipe sur sa voie. Les joueurs présents absents de la liste sont placés après.
+- Plugin : plus de bots par défaut. `TOWERWARS_BOTS=true` les remet (tests locaux). Une partie demande au moins 2 voies occupées (`MIN_LANES`), sinon elle ne démarre pas. Sans orchestrateur, le seuil ne descend jamais sous le minimum du mode.
+- Arrivée : titre et 3 lignes de règles à l'entrée, titres 5-4-3-2-1 avec son à la fin du décompte, titre « Défends ta voie ! », nom du coéquipier et rappel des mobs rapides au départ.
+- Préparation : pendant `TOWERWARS_PREPARATION_SECS` (20 s), le plugin refuse les envois (`SimError::Preparing`) ; la BossBar affiche le temps restant.
+- Mobs rapides : Lapin (T1, 6,2 b/s), Renard (T2, x1,8 tant qu'il n'a pas été touché), Cheval squelette (T3, 5,0 b/s, résiste à 60 % des ralentissements). Valeurs dans le GDD.
+- Équilibrage, mesuré par `cargo test --release -p hypolia-towerwars --lib bench:: -- --ignored --nocapture` (débit de mobs tenu sans fuite, à budget égal) :
+  - Tesla : chaque rebond fait -30 % (`CHAIN_FALLOFF`). Avant : 2 Tesla T3 tenaient 100 % d'une vague mixte, contre 47 % pour 6 Archers T3 au même prix.
+  - Mage : plus de dégâts et de brûlure, T2/T3/T4 moins chers. Avant : moitié moins rentable que l'Archer.
+  - Archer T1 : 50 → 60 or (le spam de T1 dépassait tout le reste à petit budget).
+  - Glace et Slime moins chers (tours de soutien qui ne remboursaient pas leur coût).
+  - Résultat : à budget égal, Archer, Mage et Tesla tiennent des débits proches ; le Canon et la Glace dominent les vagues denses au sol mais s'effondrent contre les mobs rapides et volants.

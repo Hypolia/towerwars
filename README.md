@@ -1,6 +1,6 @@
 # Hypolia TowerWars
 
-Mini-jeu TowerWars : carte impériale, bots, modes solo et équipes.
+Mini-jeu TowerWars : carte impériale, modes Solo (une voie par joueur) et Duo (équipes de 2).
 
 Images publiées :
 
@@ -26,6 +26,8 @@ RSPIGOT_URL=http://127.0.0.1:25582 RSPIGOT_PLUGIN_NAME=hypolia-towerwars cargo r
 
 Le proxy Velocity se lance depuis [`hypolia/platform`](https://github.com/hypolia/platform).
 
+Tester seul en local : `TOWERWARS_BOTS=true TOWERWARS_MIN_PLAYERS=1` complète la partie avec 3 bots.
+
 ## Construire les images
 
 ```bash
@@ -36,7 +38,7 @@ Optionnel : `ORCHESTRATOR_URL=http://127.0.0.1:8080` et `SERVER_ID=towerwars-1` 
 
 En jeu : `/towerwars join|leave|hub`, et pour `op` ou la permission `towerwars.admin` : `/towerwars forcestart|stop`.
 
-Variables : `TOWERWARS_MODE` (`solo` ou `teams`), `TOWERWARS_MIN_PLAYERS` (1), `TOWERWARS_MAX_PLAYERS` (6), `TOWERWARS_COUNTDOWN_SECS`, `TOWERWARS_EPHEMERAL`, `TOWERWARS_SEED`, `TOWERWARS_MAP_PATH`. Sans `TOWERWARS_MAP_PATH`, le plugin construit sa carte intégrée au démarrage.
+Variables : `TOWERWARS_MODE` (`solo` ou `teams`), `TOWERWARS_MIN_PLAYERS` (1), `TOWERWARS_MAX_PLAYERS` (12), `TOWERWARS_PREPARATION_SECS` (20), `TOWERWARS_BOTS` (`false`, tests locaux seulement), `TOWERWARS_COUNTDOWN_SECS`, `TOWERWARS_EPHEMERAL`, `TOWERWARS_SEED`, `TOWERWARS_MAP_PATH`. Sans `TOWERWARS_MAP_PATH`, le plugin construit sa carte intégrée au démarrage.
 
 ## Carte précuite
 

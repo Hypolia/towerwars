@@ -17,17 +17,19 @@ Les DTOs Rust partagés sont dans [`crates/hypolia-protocol`](https://github.com
 | `ORCHESTRATOR_TOKEN` | *(optionnel)* | Jeton Bearer (`Authorization: Bearer <token>`) si activé |
 | `RSPIGOT_URL` | `http://127.0.0.1:25582` | Endpoint gRPC du conteneur `rspigot` local au Pod |
 | `RSPIGOT_PLUGIN_NAME` | `hypolia-towerwars` | Nom d'enregistrement du plugin gRPC |
-| `TOWERWARS_MAX_PLAYERS` | `6` | Capacité maximale du serveur |
+| `TOWERWARS_MAX_PLAYERS` | `12` | Capacité maximale du serveur |
 | `TOWERWARS_MAP_NAME` | *(optionnel)* | Nom de carte choisi par l'orchestrateur (`TOWERWARS_MAP`) |
 
 ### Paramètres optionnels du plugin
 
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `TOWERWARS_MODE` | `solo` | `solo` (6 voies, 4 à 6 joueurs) ou `teams` (2 joueurs par voie, 4 à 12 joueurs) |
-| `TOWERWARS_MIN_PLAYERS` | `1` | Seuil de départ sans orchestrateur ; avec orchestrateur, le seuil est `expected_players` (réponse de heartbeat) |
-| `TOWERWARS_MAX_PLAYERS` | `6` | Plafonné par le mode |
+| `TOWERWARS_MODE` | `solo` | Mode sans orchestrateur : `solo` (une voie par joueur, 2 à 6 joueurs) ou `teams` (2 joueurs par voie, 4 à 12 joueurs). Avec orchestrateur, le mode vient des équipes `teams` de la réponse de heartbeat |
+| `TOWERWARS_MIN_PLAYERS` | `1` | Seuil de départ sans orchestrateur, jamais sous le minimum du mode (2 en solo, 4 en teams) sans bots ; avec orchestrateur, le seuil est `expected_players` (réponse de heartbeat) |
+| `TOWERWARS_MAX_PLAYERS` | `12` | Plafonné à 12 |
 | `TOWERWARS_COUNTDOWN_SECS` | `15` | Durée du compte à rebours |
+| `TOWERWARS_PREPARATION_SECS` | `20` | Début de partie sans envoi de mobs |
+| `TOWERWARS_BOTS` | `false` | Complète jusqu'à 4 voies avec des bots. Pour les tests locaux uniquement, jamais en production |
 | `TOWERWARS_END_DELAY_SECS` | `10` | Délai de célébration avant le retour au Hub |
 | `TOWERWARS_EPHEMERAL` | `true` si `ORCHESTRATOR_URL` est défini | Termine en phase `ending` pour recyclage du Pod |
 | `TOWERWARS_HEARTBEAT_INTERVAL_MS` | `2000` | Cadence du heartbeat (minimum `500` ms) |
