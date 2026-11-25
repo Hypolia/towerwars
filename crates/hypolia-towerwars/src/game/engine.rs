@@ -1941,6 +1941,10 @@ fn replay_reply(resp: &hypolia_protocol::JoinQueueResponse) -> String {
         hypolia_protocol::QueueJoinStatus::Transferring => {
             "§aPartie trouvée, transfert en cours…".to_owned()
         }
+        hypolia_protocol::QueueJoinStatus::NotPartyLeader => format!(
+            "§cSeul §f{} §cpeut relancer une partie pour le groupe.",
+            resp.target_server.as_deref().unwrap_or("le chef")
+        ),
         hypolia_protocol::QueueJoinStatus::AlreadyQueued => format!(
             "§eTu es déjà en file pour TowerWars (position {}).",
             resp.position
@@ -1954,6 +1958,21 @@ fn replay_reply(resp: &hypolia_protocol::JoinQueueResponse) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn replay_reply_names_the_party_leader_for_a_member() {
+        let resp = hypolia_protocol::JoinQueueResponse {
+            status: hypolia_protocol::QueueJoinStatus::NotPartyLeader,
+            position: 0,
+            total_queued: 0,
+            min_players: 0,
+            target_server: Some("Steve".to_owned()),
+            ready_servers: 0,
+            active_servers: 0,
+            max_servers: 0,
+        };
+        assert!(replay_reply(&resp).contains("Steve"));
+    }
+
     #[test]
     fn replay_reply_tells_the_queue_position() {
         let resp = |status| hypolia_protocol::JoinQueueResponse {
