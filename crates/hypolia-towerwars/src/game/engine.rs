@@ -392,10 +392,18 @@ impl Game {
     }
 
     async fn apply_heartbeat_response(&self, response: Option<HeartbeatResponse>) {
-        let Some(expected) = response.and_then(|response| response.expected_players) else {
+        let Some(response) = response else {
             return;
         };
-        let intents = self.lock().session.set_expected(Some(expected));
+        let Some(expected) = response.expected_players else {
+            return;
+        };
+        let lineup = response
+            .teams
+            .iter()
+            .map(|team| team.iter().map(|uuid| player_id(*uuid)).collect())
+            .collect();
+        let intents = self.lock().session.set_expected(Some(expected), lineup);
         self.run(intents).await;
         self.check_phase_changed();
     }

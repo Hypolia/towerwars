@@ -4,14 +4,15 @@ use uuid::Uuid;
 
 use super::bot::{BOT_TURN_TICKS, Bot};
 use super::intent::Intent;
-use super::lanes::assign_seats;
+use super::lanes::seat_lineup;
 use super::report::MatchLog;
 use crate::config::TowerWarsConfig;
-use crate::domain::{GameMode, LaneId, PlayerId, TICKS_PER_SECOND};
+use crate::domain::{GameMode, LANE_COUNT, LaneId, PlayerId, TICKS_PER_SECOND};
 use crate::map::Map;
 use crate::sim::{Event, Match};
 
 pub const RESET_DELAY_TICKS: u32 = 20 * 10;
+const BOT_LANES: usize = 4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Rules {
@@ -22,6 +23,7 @@ pub struct Rules {
     pub end_delay_ticks: u32,
     pub seed: Option<u64>,
     pub needs_expected: bool,
+    pub bots: bool,
 }
 
 impl From<&TowerWarsConfig> for Rules {
@@ -34,6 +36,7 @@ impl From<&TowerWarsConfig> for Rules {
             end_delay_ticks: config.end_delay_ticks,
             seed: config.seed,
             needs_expected: config.orchestrator_url.is_some(),
+            bots: config.bots,
         }
     }
 }
@@ -91,10 +94,11 @@ pub struct Session {
     bots: Vec<PlayerId>,
     brains: Vec<Bot>,
     expected: Option<u32>,
+    lineup: Vec<Vec<PlayerId>>,
 }
 
-fn bots_to_fill(mode: GameMode, humans: usize) -> Vec<PlayerId> {
-    let missing = mode.min_players().saturating_sub(humans);
+fn bots_to_fill(occupied_lanes: usize) -> Vec<PlayerId> {
+    let missing = BOT_LANES.min(LANE_COUNT).saturating_sub(occupied_lanes);
     (0..missing)
         .map(|index| PlayerId(Uuid::from_u128(u128::MAX - index as u128)))
         .collect()
@@ -125,6 +129,7 @@ impl Session {
             bots: Vec::new(),
             brains: Vec::new(),
             expected: None,
+            lineup: Vec::new(),
         }
     }
 
@@ -152,7 +157,12 @@ impl Session {
         if self.rules.needs_expected {
             self.expected.map(|expected| (expected as usize).max(1))
         } else {
-            Some(self.rules.min_players.max(1))
+            let floor = if self.rules.bots {
+                1
+            } else {
+                self.match_mode().min_players()
+            };
+            Some(self.rules.min_players.max(floor))
         }
     }
 
@@ -161,9 +171,26 @@ impl Session {
             .is_some_and(|threshold| self.roster.len() >= threshold)
     }
 
-    pub fn set_expected(&mut self, expected: Option<u32>) -> Vec<Intent> {
+    pub fn match_mode(&self) -> GameMode {
+        if self.lineup.is_empty() {
+            self.rules.mode
+        } else if self.lineup.iter().any(|team| team.len() > 1) {
+            GameMode::Teams
+        } else {
+            GameMode::Solo
+        }
+    }
+
+    pub fn set_expected(
+        &mut self,
+        expected: Option<u32>,
+        lineup: Vec<Vec<PlayerId>>,
+    ) -> Vec<Intent> {
         if expected.is_some() {
             self.expected = expected;
+        }
+        if !lineup.is_empty() {
+            self.lineup = lineup;
         }
         if self.server_ending {
             return Vec::new();
@@ -393,12 +420,25 @@ impl Session {
     }
 
     fn start(&mut self) -> Vec<Intent> {
-        let mut seated = self.roster.clone();
-        self.bots = bots_to_fill(self.rules.mode, seated.len());
-        seated.extend(self.bots.iter().copied());
-        let seats = assign_seats(self.rules.mode, &seated);
+        let mode = self.match_mode();
+        let mut seats = seat_lineup(mode, &self.lineup, &self.roster);
+        let occupied = seats.last().map_or(0, |seat| seat.lane.index() + 1);
+        self.bots = if self.rules.bots {
+            bots_to_fill(occupied)
+        } else {
+            Vec::new()
+        };
+        seats.extend(
+            self.bots
+                .iter()
+                .zip(LaneId::ALL.into_iter().skip(occupied))
+                .map(|(player, lane)| crate::sim::Seat {
+                    player: *player,
+                    lane,
+                }),
+        );
         let seed = self.rules.seed.unwrap_or_else(random_seed);
-        match Match::new(self.rules.mode, seed, &self.map, &seats) {
+        match Match::new(mode, seed, &self.map, &seats) {
             Ok(game) => {
                 self.log = Some(MatchLog::start(
                     Uuid::new_v4(),
@@ -512,6 +552,7 @@ impl Session {
         self.bots.clear();
         self.brains.clear();
         self.expected = None;
+        self.lineup.clear();
         vec![Intent::Broadcast(text.to_owned()), Intent::Reset]
     }
 
@@ -545,6 +586,7 @@ mod tests {
             end_delay_ticks: 3,
             seed: Some(11),
             needs_expected: false,
+            bots: false,
         }
     }
 
@@ -666,14 +708,25 @@ mod tests {
     }
 
     #[test]
-    fn a_forced_start_needs_players_and_marks_the_report() {
+    fn a_forced_start_needs_players() {
         let mut session = session(EndBehavior::default());
         assert_eq!(session.force_start(), Err(ForceStartError::NoPlayers));
         session.join(pid(0));
+        session.join(pid(1));
         assert!(matches!(
             session.force_start().expect("forced").as_slice(),
-            [Intent::Begin { seats }] if seats.len() == GameMode::Solo.min_players()
+            [Intent::Begin { seats }] if seats.len() == 2
         ));
+    }
+
+    #[test]
+    fn a_forced_start_alone_without_bots_does_not_begin() {
+        let mut session = session(EndBehavior::default());
+        session.join(pid(0));
+        let intents = session.force_start().expect("forced");
+        assert!(begun(&intents).is_none());
+        assert_eq!(session.stage(), Stage::Waiting);
+        assert!(session.game().is_none());
     }
 
     #[test]
@@ -967,6 +1020,16 @@ mod tests {
         Session::new(Map::test_map(), rules, EndBehavior::default())
     }
 
+    fn with_bots() -> Session {
+        let rules = Rules {
+            min_players: 1,
+            needs_expected: true,
+            bots: true,
+            ..rules()
+        };
+        Session::new(Map::test_map(), rules, EndBehavior::default())
+    }
+
     fn begun(intents: &[Intent]) -> Option<&Vec<crate::sim::Seat>> {
         intents.iter().find_map(|intent| match intent {
             Intent::Begin { seats } => Some(seats),
@@ -975,12 +1038,12 @@ mod tests {
     }
 
     #[test]
-    fn solo_expected_starts_at_once_and_fills_the_other_lanes_with_bots() {
-        let mut session = orchestrated();
-        session.set_expected(Some(1));
+    fn with_bots_a_lone_player_starts_at_once_against_three_bots() {
+        let mut session = with_bots();
+        session.set_expected(Some(1), Vec::new());
         let intents = session.join(pid(0));
         let seats = begun(&intents).expect("begin");
-        assert_eq!(seats.len(), GameMode::Solo.min_players());
+        assert_eq!(seats.len(), BOT_LANES);
         assert_eq!(seats[0].player, pid(0));
         assert_eq!(session.stage(), Stage::Playing);
         assert!(session.game().is_some());
@@ -988,17 +1051,17 @@ mod tests {
 
     #[test]
     fn expected_arriving_after_the_player_starts_at_once() {
-        let mut session = orchestrated();
+        let mut session = with_bots();
         assert!(begun(&session.join(pid(0))).is_none());
         assert_eq!(session.stage(), Stage::Waiting);
-        assert!(begun(&session.set_expected(Some(1))).is_some());
+        assert!(begun(&session.set_expected(Some(1), Vec::new())).is_some());
         assert_eq!(session.stage(), Stage::Playing);
     }
 
     #[test]
     fn a_duo_waits_for_the_second_player_then_counts_down() {
         let mut session = orchestrated();
-        session.set_expected(Some(2));
+        session.set_expected(Some(2), Vec::new());
         session.join(pid(0));
         assert_eq!(session.stage(), Stage::Waiting);
         session.join(pid(1));
@@ -1014,7 +1077,7 @@ mod tests {
     #[test]
     fn the_countdown_cancels_when_the_roster_drops_below_expected() {
         let mut session = orchestrated();
-        session.set_expected(Some(2));
+        session.set_expected(Some(2), Vec::new());
         session.join(pid(0));
         session.join(pid(1));
         session.leave(pid(1));
@@ -1025,7 +1088,7 @@ mod tests {
     fn without_a_known_expected_an_orchestrated_session_never_starts() {
         let mut session = orchestrated();
         session.join(pid(0));
-        session.set_expected(None);
+        session.set_expected(None, Vec::new());
         for _ in 0..5 {
             session.tick();
         }
@@ -1036,27 +1099,29 @@ mod tests {
     #[test]
     fn a_none_response_keeps_the_previous_expected_and_a_reset_clears_it() {
         let mut session = orchestrated();
-        session.set_expected(Some(3));
-        session.set_expected(None);
+        session.set_expected(Some(3), Vec::new());
+        session.set_expected(None, Vec::new());
         assert_eq!(session.expected(), Some(3));
         session.stop();
         assert_eq!(session.expected(), None);
     }
 
     #[test]
-    fn without_an_orchestrator_the_threshold_is_min_players() {
+    fn without_an_orchestrator_the_threshold_never_drops_below_two_players() {
         let rules = Rules {
             min_players: 1,
             ..rules()
         };
         let mut session = Session::new(Map::test_map(), rules, EndBehavior::default());
-        assert!(begun(&session.join(pid(0))).is_some());
+        assert!(begun(&session.join(pid(0))).is_none());
+        session.join(pid(1));
+        assert!(matches!(session.stage(), Stage::Countdown { .. }));
     }
 
     #[test]
     fn bots_send_mobs_at_the_human_so_a_solo_match_is_not_empty() {
-        let mut session = orchestrated();
-        session.set_expected(Some(1));
+        let mut session = with_bots();
+        session.set_expected(Some(1), Vec::new());
         session.join(pid(0));
         let mut sent_by_bot = false;
         let mut reached_human_lane = false;
@@ -1074,10 +1139,60 @@ mod tests {
     }
 
     #[test]
-    fn bots_only_fill_the_seats_missing_to_the_mode_minimum() {
-        let min = GameMode::Solo.min_players();
-        assert_eq!(bots_to_fill(GameMode::Solo, 1).len(), min - 1);
-        assert!(bots_to_fill(GameMode::Solo, min).is_empty());
+    fn bots_only_fill_the_lanes_missing_to_four() {
+        assert_eq!(bots_to_fill(1).len(), BOT_LANES - 1);
+        assert!(bots_to_fill(BOT_LANES).is_empty());
+    }
+
+    #[test]
+    fn without_bots_no_bot_ever_takes_a_lane() {
+        let mut session = orchestrated();
+        session.set_expected(Some(2), Vec::new());
+        session.join(pid(0));
+        session.join(pid(1));
+        let mut seats = Vec::new();
+        for _ in 0..3 {
+            if let Some(begun) = begun(&session.tick().intents) {
+                seats.clone_from(begun);
+            }
+        }
+        assert_eq!(seats.len(), 2);
+        assert!(seats.iter().all(|seat| !session.is_bot(seat.player)));
+    }
+
+    #[test]
+    fn a_duo_lineup_from_the_orchestrator_seats_teams_together() {
+        let mut session = orchestrated();
+        let lineup = vec![vec![pid(0), pid(3)], vec![pid(1), pid(2)]];
+        session.set_expected(Some(4), lineup);
+        for index in 0..4 {
+            session.join(pid(index));
+        }
+        for _ in 0..3 {
+            session.tick();
+        }
+        assert_eq!(session.match_mode(), GameMode::Teams);
+        assert_eq!(session.lane_of(pid(0)), session.lane_of(pid(3)));
+        assert_eq!(session.lane_of(pid(1)), session.lane_of(pid(2)));
+        assert_ne!(session.lane_of(pid(0)), session.lane_of(pid(1)));
+    }
+
+    #[test]
+    fn a_solo_lineup_plays_solo_even_on_a_teams_server() {
+        let rules = Rules {
+            mode: GameMode::Teams,
+            needs_expected: true,
+            ..rules()
+        };
+        let mut session = Session::new(Map::test_map(), rules, EndBehavior::default());
+        session.set_expected(Some(2), vec![vec![pid(0)], vec![pid(1)]]);
+        session.join(pid(0));
+        session.join(pid(1));
+        assert_eq!(session.match_mode(), GameMode::Solo);
+        for _ in 0..3 {
+            session.tick();
+        }
+        assert_ne!(session.lane_of(pid(0)), session.lane_of(pid(1)));
     }
 
     #[test]
