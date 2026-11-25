@@ -211,6 +211,15 @@ pub fn send_menu(game: &Match, player: PlayerId) -> Option<Menu> {
             if spec.armor > 0.0 {
                 lore.push(format!("§7Armure : §f{:.0}%", spec.armor * 100.0));
             }
+            if spec.slow_resist > 0.0 {
+                lore.push(format!(
+                    "§bRésiste au ralentissement : §f{:.0}%",
+                    spec.slow_resist * 100.0
+                ));
+            }
+            if kind == MobKind::Fox {
+                lore.push("§eSprinte tant qu'il n'est pas touché".to_owned());
+            }
             lore.push("§eClic gauche : envoyer 1".to_owned());
             lore.push(format!("§eClic droit / Shift : envoyer {SEND_BULK}"));
             items.push(MenuItem {
@@ -429,12 +438,12 @@ mod tests {
     }
 
     #[test]
-    fn the_send_menu_has_four_tiers_of_four_mobs() {
+    fn the_send_menu_has_four_tiers_of_mobs() {
         let game = game();
         let menu = send_menu(&game, pid(0)).expect("menu");
         assert!(fits(&menu));
         let sendable: Vec<MenuAction> = menu.items.iter().filter_map(|item| item.action).collect();
-        assert_eq!(sendable.len(), 4);
+        assert_eq!(sendable.len(), 5);
         assert_eq!(
             menu.item_at(2).and_then(|item| item.action),
             Some(MenuAction::Send(MobKind::Silverfish))
@@ -444,7 +453,7 @@ mod tests {
             .iter()
             .filter(|item| item.material == Material::Barrier)
             .collect();
-        assert_eq!(locked.len(), 3 + 12);
+        assert_eq!(locked.len(), 3 + 5 + 5 + 4);
         assert!(locked.iter().all(|item| item.action.is_none()));
     }
 

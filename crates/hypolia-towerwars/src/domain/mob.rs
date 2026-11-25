@@ -17,9 +17,12 @@ pub enum MobKind {
     Warden,
     Wither,
     MediumSlime,
+    Rabbit,
+    Fox,
+    SkeletonHorse,
 }
 
-pub const SENDABLE_MOBS: usize = 16;
+pub const SENDABLE_MOBS: usize = 19;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct MobSpec {
@@ -58,14 +61,17 @@ impl MobKind {
         Self::Zombie,
         Self::Endermite,
         Self::Skeleton,
+        Self::Rabbit,
         Self::Spider,
         Self::Creeper,
         Self::Blaze,
         Self::Witch,
+        Self::Fox,
         Self::GiantSlime,
         Self::PiglinBrute,
         Self::Enderman,
         Self::Ghast,
+        Self::SkeletonHorse,
         Self::IronGolem,
         Self::Ravager,
         Self::Warden,
@@ -224,6 +230,31 @@ impl MobKind {
                 speed: 2.5,
                 damage: 15,
                 tier: 4,
+                ..BASE
+            },
+            Self::Rabbit => MobSpec {
+                cost: 40,
+                income: 4,
+                hp: 40.0,
+                speed: 6.2,
+                ..BASE
+            },
+            Self::Fox => MobSpec {
+                cost: 260,
+                income: 27,
+                hp: 380.0,
+                speed: 3.6,
+                tier: 2,
+                ..BASE
+            },
+            Self::SkeletonHorse => MobSpec {
+                cost: 1250,
+                income: 108,
+                hp: 1500.0,
+                speed: 5.0,
+                damage: 3,
+                tier: 3,
+                slow_resist: 0.6,
                 ..BASE
             },
             Self::MediumSlime => MobSpec {

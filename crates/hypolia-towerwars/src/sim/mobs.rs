@@ -10,6 +10,7 @@ use super::world::World;
 
 const PIGLIN_RAGE_HP: f32 = 0.4;
 const PIGLIN_RAGE_SPEED: f32 = 1.3;
+const FOX_SPRINT_SPEED: f32 = 1.8;
 const WITHER_HEAL: u16 = 2;
 
 pub(crate) fn update_sudden_death(world: &mut World) {
@@ -46,6 +47,9 @@ fn step_of(mob: &Mob, level: u32) -> f32 {
     step *= 1.0 - slow;
     if mob.kind == MobKind::PiglinBrute && mob.hp < PIGLIN_RAGE_HP * mob.max_hp {
         step *= PIGLIN_RAGE_SPEED;
+    }
+    if mob.kind == MobKind::Fox && mob.hp >= mob.max_hp {
+        step *= FOX_SPRINT_SPEED;
     }
     step
 }
@@ -157,7 +161,8 @@ mod tests {
     use crate::sim::rng::SplitMix64;
     use crate::sim::world::{Phase, PlayerState, World};
 
-    use super::{advance, reap, resolve_arrivals};
+    use super::{FOX_SPRINT_SPEED, advance, reap, resolve_arrivals, step_of};
+    use crate::domain::TICKS_PER_SECOND;
 
     fn pid(index: u128) -> PlayerId {
         PlayerId(Uuid::from_u128(index + 1))
@@ -457,5 +462,42 @@ mod tests {
         killed.sort_unstable();
         assert_eq!(killed, vec![0, 1, 2]);
         assert_eq!(gold_of(&world, 0), 100 + 3 + 1 + 1);
+    }
+
+    #[test]
+    fn a_fox_sprints_until_its_first_hit() {
+        let mut fox = mob(0, MobKind::Fox, 1);
+        let base = MobKind::Fox.spec().speed / TICKS_PER_SECOND as f32;
+        assert!((step_of(&fox, 0) - base * FOX_SPRINT_SPEED).abs() < 1e-6);
+        fox.hp -= 1.0;
+        assert!((step_of(&fox, 0) - base).abs() < 1e-6);
+    }
+
+    #[test]
+    fn a_skeleton_horse_shrugs_off_most_of_a_slow() {
+        let mut horse = mob(0, MobKind::SkeletonHorse, 1);
+        let mut zombie = mob(1, MobKind::Zombie, 1);
+        let slow = crate::domain::Slow {
+            percent: 0.5,
+            remaining: 20,
+        };
+        horse.statuses.slow = Some(slow);
+        zombie.statuses.slow = Some(slow);
+        let ratio = |mob: &Mob| step_of(mob, 0) / (mob.kind.spec().speed / TICKS_PER_SECOND as f32);
+        assert!(ratio(&horse) > ratio(&zombie));
+        assert!((ratio(&horse) - 0.8).abs() < 1e-5);
+    }
+
+    #[test]
+    fn the_fast_mobs_outrun_every_other_mob_of_their_tier() {
+        for fast in [MobKind::Rabbit, MobKind::SkeletonHorse] {
+            let tier = fast.spec().tier;
+            assert!(
+                MobKind::SENDABLE
+                    .iter()
+                    .filter(|kind| kind.spec().tier == tier && **kind != fast)
+                    .all(|kind| kind.spec().speed < fast.spec().speed)
+            );
+        }
     }
 }

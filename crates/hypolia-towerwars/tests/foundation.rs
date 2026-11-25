@@ -18,12 +18,13 @@ fn a_new_match_starts_every_player_with_the_starting_resources() {
 }
 
 #[test]
-fn solo_needs_at_least_four_players() {
-    let result = Match::new(GameMode::Solo, 1, &straight_map(), &solo_seats(3));
+fn a_match_needs_at_least_two_occupied_lanes() {
+    let result = Match::new(GameMode::Solo, 1, &straight_map(), &solo_seats(1));
     assert!(matches!(
         result,
         Err(MatchError::Sim(SimError::NotEnoughPlayers))
     ));
+    assert!(Match::new(GameMode::Solo, 1, &straight_map(), &solo_seats(2)).is_ok());
 }
 
 #[test]

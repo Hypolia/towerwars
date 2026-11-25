@@ -24,7 +24,7 @@ struct TowerRow {
     effect: TowerEffect,
 }
 
-const MOBS: [MobRow; 17] = [
+const MOBS: [MobRow; 20] = [
     MobRow {
         kind: MobKind::Silverfish,
         cost: 15,
@@ -243,6 +243,45 @@ const MOBS: [MobRow; 17] = [
         tier: 3,
         armor: 0.0,
         slow_resist: 0.0,
+        dodge: 0.0,
+        flags: [false, false, false],
+    },
+    MobRow {
+        kind: MobKind::Rabbit,
+        cost: 40,
+        income: 4,
+        hp: 40.0,
+        speed: 6.2,
+        damage: 1,
+        tier: 1,
+        armor: 0.0,
+        slow_resist: 0.0,
+        dodge: 0.0,
+        flags: [false, false, false],
+    },
+    MobRow {
+        kind: MobKind::Fox,
+        cost: 260,
+        income: 27,
+        hp: 380.0,
+        speed: 3.6,
+        damage: 1,
+        tier: 2,
+        armor: 0.0,
+        slow_resist: 0.0,
+        dodge: 0.0,
+        flags: [false, false, false],
+    },
+    MobRow {
+        kind: MobKind::SkeletonHorse,
+        cost: 1250,
+        income: 108,
+        hp: 1500.0,
+        speed: 5.0,
+        damage: 3,
+        tier: 3,
+        armor: 0.0,
+        slow_resist: 0.6,
         dodge: 0.0,
         flags: [false, false, false],
     },
@@ -689,7 +728,7 @@ fn every_mob_matches_the_design_document() {
 }
 
 #[test]
-fn the_mob_table_covers_all_sixteen_sendable_kinds_and_the_medium_slime() {
+fn the_mob_table_covers_every_sendable_kind_and_the_medium_slime() {
     assert_eq!(MOBS.len(), SENDABLE_MOBS + 1);
     for kind in MobKind::SENDABLE {
         assert!(MOBS.iter().any(|row| row.kind == kind), "{kind:?}");
