@@ -669,13 +669,13 @@ fn towerwars_full_lifecycle_orchestrator_countdown_play_forfeit_and_report() {
     );
     game.place_tower(alice, TowerKind::Archer, (2, 4))
         .expect("tower");
-    assert_eq!(gold(&game, alice), Some(50));
+    assert_eq!(gold(&game, alice), Some(40));
     assert_eq!(
         game.place_tower(alice, TowerKind::Archer, (2, 4)),
-        Err("§cCette case est déjà occupée.")
+        Err("§cPas assez d'or.")
     );
     game.send_mob(alice, MobKind::Silverfish, 1).expect("send");
-    assert_eq!(gold(&game, alice), Some(35));
+    assert_eq!(gold(&game, alice), Some(25));
     assert_eq!(
         game.send_mob(alice, MobKind::Silverfish, 11),
         Err("§cPlus de charge pour ce mob, patientez.")

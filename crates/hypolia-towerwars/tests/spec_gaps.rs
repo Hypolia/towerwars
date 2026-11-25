@@ -66,7 +66,7 @@ fn a_player_who_left_cannot_act_on_the_lane_of_a_teammate() {
     assert_eq!(game.lane(lane(0)).towers().len(), 1);
     assert_eq!(game.gold(player(1)), Some(Gold::new(100)));
     assert_eq!(game.income(player(1)), Some(10));
-    assert_eq!(game.sell(player(0), tower), Ok(40));
+    assert_eq!(game.sell(player(0), tower), Ok(48));
 }
 
 #[test]

@@ -32,7 +32,7 @@ impl TowerKind {
 
 const fn archer(level: Level) -> TowerStats {
     match level {
-        Level::T1 => stats(50, 12.0, 20, 8.0, TowerEffect::None),
+        Level::T1 => stats(60, 12.0, 20, 8.0, TowerEffect::None),
         Level::T2 => stats(100, 26.0, 18, 9.0, TowerEffect::None),
         Level::T3 => stats(250, 60.0, 16, 10.0, TowerEffect::None),
         Level::T4(Branch::A) => stats(
@@ -59,9 +59,9 @@ const fn slow(percent: f32, ticks: u16, vulnerability: f32) -> TowerEffect {
 
 const fn ice(level: Level) -> TowerStats {
     match level {
-        Level::T1 => stats(75, 5.0, 30, 3.5, slow(0.25, 50, 0.0)),
-        Level::T2 => stats(150, 12.0, 28, 4.0, slow(0.35, 60, 0.0)),
-        Level::T3 => stats(350, 25.0, 26, 4.5, slow(0.45, 70, 0.0)),
+        Level::T1 => stats(60, 5.0, 30, 3.5, slow(0.25, 50, 0.0)),
+        Level::T2 => stats(120, 12.0, 28, 4.0, slow(0.35, 60, 0.0)),
+        Level::T3 => stats(280, 25.0, 26, 4.5, slow(0.45, 70, 0.0)),
         Level::T4(Branch::A) => stats(800, 25.0, 26, 4.5, slow(0.60, 80, 0.15)),
         Level::T4(Branch::B) => stats(
             800,
@@ -84,12 +84,12 @@ const fn burn(dps: f32, ticks: u16) -> TowerEffect {
 
 const fn mage(level: Level) -> TowerStats {
     match level {
-        Level::T1 => stats(100, 15.0, 24, 8.0, burn(5.0, 60)),
-        Level::T2 => stats(220, 35.0, 22, 9.0, burn(12.0, 60)),
-        Level::T3 => stats(480, 80.0, 20, 10.0, burn(25.0, 80)),
+        Level::T1 => stats(100, 18.0, 24, 8.0, burn(8.0, 60)),
+        Level::T2 => stats(180, 42.0, 22, 9.0, burn(18.0, 60)),
+        Level::T3 => stats(380, 95.0, 20, 10.0, burn(35.0, 80)),
         Level::T4(Branch::A) => stats(
-            1100,
-            80.0,
+            900,
+            95.0,
             20,
             10.0,
             TowerEffect::Pyro {
@@ -99,8 +99,8 @@ const fn mage(level: Level) -> TowerStats {
             },
         ),
         Level::T4(Branch::B) => stats(
-            1100,
-            80.0,
+            900,
+            95.0,
             20,
             10.0,
             TowerEffect::Curse {
@@ -160,9 +160,9 @@ const fn corrode(armor: f32, ticks: u16) -> TowerEffect {
 
 const fn slime(level: Level) -> TowerStats {
     match level {
-        Level::T1 => stats(120, 14.0, 26, 7.5, corrode(0.15, 80)),
-        Level::T2 => stats(260, 32.0, 24, 8.5, corrode(0.25, 80)),
-        Level::T3 => stats(550, 75.0, 22, 9.5, corrode(0.35, 100)),
+        Level::T1 => stats(100, 14.0, 26, 7.5, corrode(0.15, 80)),
+        Level::T2 => stats(200, 32.0, 24, 8.5, corrode(0.25, 80)),
+        Level::T3 => stats(450, 75.0, 22, 9.5, corrode(0.35, 100)),
         Level::T4(Branch::A) => stats(
             1250,
             75.0,

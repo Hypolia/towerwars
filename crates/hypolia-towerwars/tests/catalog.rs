@@ -291,7 +291,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Archer,
         level: Level::T1,
-        cost: 50,
+        cost: 60,
         damage: 12.0,
         cooldown: 20,
         range: 8.0,
@@ -339,7 +339,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Ice,
         level: Level::T1,
-        cost: 75,
+        cost: 60,
         damage: 5.0,
         cooldown: 30,
         range: 3.5,
@@ -352,7 +352,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Ice,
         level: Level::T2,
-        cost: 150,
+        cost: 120,
         damage: 12.0,
         cooldown: 28,
         range: 4.0,
@@ -365,7 +365,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Ice,
         level: Level::T3,
-        cost: 350,
+        cost: 280,
         damage: 25.0,
         cooldown: 26,
         range: 4.5,
@@ -406,43 +406,43 @@ const TOWERS: [TowerRow; 35] = [
         kind: TowerKind::Mage,
         level: Level::T1,
         cost: 100,
-        damage: 15.0,
+        damage: 18.0,
         cooldown: 24,
         range: 8.0,
         effect: TowerEffect::Burn {
-            dps: 5.0,
+            dps: 8.0,
             ticks: 60,
         },
     },
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T2,
-        cost: 220,
-        damage: 35.0,
+        cost: 180,
+        damage: 42.0,
         cooldown: 22,
         range: 9.0,
         effect: TowerEffect::Burn {
-            dps: 12.0,
+            dps: 18.0,
             ticks: 60,
         },
     },
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T3,
-        cost: 480,
-        damage: 80.0,
+        cost: 380,
+        damage: 95.0,
         cooldown: 20,
         range: 10.0,
         effect: TowerEffect::Burn {
-            dps: 25.0,
+            dps: 35.0,
             ticks: 80,
         },
     },
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T4(Branch::A),
-        cost: 1100,
-        damage: 80.0,
+        cost: 900,
+        damage: 95.0,
         cooldown: 20,
         range: 10.0,
         effect: TowerEffect::Pyro {
@@ -454,8 +454,8 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Mage,
         level: Level::T4(Branch::B),
-        cost: 1100,
-        damage: 80.0,
+        cost: 900,
+        damage: 95.0,
         cooldown: 20,
         range: 10.0,
         effect: TowerEffect::Curse {
@@ -581,7 +581,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Slime,
         level: Level::T1,
-        cost: 120,
+        cost: 100,
         damage: 14.0,
         cooldown: 26,
         range: 7.5,
@@ -593,7 +593,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Slime,
         level: Level::T2,
-        cost: 260,
+        cost: 200,
         damage: 32.0,
         cooldown: 24,
         range: 8.5,
@@ -605,7 +605,7 @@ const TOWERS: [TowerRow; 35] = [
     TowerRow {
         kind: TowerKind::Slime,
         level: Level::T3,
-        cost: 550,
+        cost: 450,
         damage: 75.0,
         cooldown: 22,
         range: 9.5,

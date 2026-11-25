@@ -421,7 +421,7 @@ mod tests {
         assert!(fits(&menu));
         let archer = menu.item_at(10).expect("archer");
         assert_eq!(archer.action, Some(MenuAction::Build(TowerKind::Archer)));
-        assert!(archer.lore[0].contains("50 or"));
+        assert!(archer.lore[0].contains("60 or"));
         assert!(archer.lore.iter().any(|line| line.contains("Dégâts")));
         assert!(archer.lore.iter().any(|line| line.contains("Portée")));
     }
@@ -429,12 +429,12 @@ mod tests {
     #[test]
     fn unaffordable_towers_are_costed_in_red_and_the_selection_is_marked() {
         let menu = build_menu(60, Some(TowerKind::Archer));
-        let ice = menu.item_at(11).expect("ice");
-        assert!(ice.lore[0].contains("§c75 or"), "{:?}", ice.lore);
+        let mage = menu.item_at(12).expect("mage");
+        assert!(mage.lore[0].contains("§c100 or"), "{:?}", mage.lore);
         let archer = menu.item_at(10).expect("archer");
-        assert!(archer.lore[0].contains("§a50 or"));
+        assert!(archer.lore[0].contains("§a60 or"));
         assert!(archer.name.contains('▶'));
-        assert!(!ice.name.contains('▶'));
+        assert!(!mage.name.contains('▶'));
     }
 
     #[test]
@@ -528,7 +528,7 @@ mod tests {
         );
         assert_eq!(menu.action_at(TOWER_SELL_SLOT), Some(MenuAction::Sell));
         let sell = menu.item_at(TOWER_SELL_SLOT).expect("sell");
-        assert!(sell.lore[0].contains("40 or"), "{:?}", sell.lore);
+        assert!(sell.lore[0].contains("48 or"), "{:?}", sell.lore);
         let upgrade = menu.item_at(TOWER_UPGRADE_SLOT).expect("upgrade");
         assert!(upgrade.lore[0].contains("100 or"));
         assert!(
@@ -574,7 +574,7 @@ mod tests {
         assert_eq!(menu.action_at(TOWER_UPGRADE_SLOT), None);
         assert!(menu.item_at(TOWER_BRANCH_A_SLOT).expect("a").lore[0].contains("600 or"));
         let sell = menu.item_at(TOWER_SELL_SLOT).expect("sell");
-        assert!(sell.lore[0].contains("320 or"), "{:?}", sell.lore);
+        assert!(sell.lore[0].contains("328 or"), "{:?}", sell.lore);
     }
 
     #[test]

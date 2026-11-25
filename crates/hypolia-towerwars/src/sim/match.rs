@@ -168,6 +168,11 @@ impl Match {
         std::mem::take(&mut self.world.events)
     }
 
+    #[cfg(test)]
+    pub(crate) fn world_mut(&mut self) -> &mut World {
+        &mut self.world
+    }
+
     pub fn world(&self) -> &World {
         &self.world
     }

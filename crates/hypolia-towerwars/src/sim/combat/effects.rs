@@ -69,6 +69,8 @@ pub(super) fn apply(
     }
 }
 
+const CHAIN_FALLOFF: f32 = 0.7;
+
 fn dodged(world: &mut World, attack: &Attack, target: usize) -> bool {
     let dodge = world.lanes[attack.lane_index].mobs[target]
         .kind
@@ -230,8 +232,10 @@ fn chain(
         hits.iter()
             .map(|index| lane.mob_position(&lane.mobs[*index])),
     );
+    let mut damage = attack.damage;
     for index in hits {
-        hit(world, attack, index, attack.damage, DamageKind::Physical);
+        hit(world, attack, index, damage, DamageKind::Physical);
+        damage *= CHAIN_FALLOFF;
     }
     world.emit(Event::Chain {
         lane: attack.lane,

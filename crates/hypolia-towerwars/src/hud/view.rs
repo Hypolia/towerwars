@@ -265,7 +265,7 @@ mod tests {
         game.place(pid(0), TowerKind::Archer, (2, 4))
             .expect("place");
         let line = action_bar(&game, pid(0)).expect("line");
-        assert!(line.contains("Or: 35 ⛃"), "{line}");
+        assert!(line.contains("Or: 25 ⛃"), "{line}");
         assert!(line.contains("Tours: 1/80"), "{line}");
     }
 

@@ -32,10 +32,10 @@ fn spec_tw_12_an_archer_kills_a_silverfish_in_three_shots_for_one_gold() {
     assert_eq!(first_hp(&game), 23.0);
     run(&mut game, 20);
     assert_eq!(first_hp(&game), 11.0);
-    assert_eq!(game.gold(player(0)), Some(Gold::new(50)));
+    assert_eq!(game.gold(player(0)), Some(Gold::new(40)));
     run(&mut game, 20);
     assert!(game.lane(lane(0)).mobs.is_empty());
-    assert_eq!(game.gold(player(0)), Some(Gold::new(51)));
+    assert_eq!(game.gold(player(0)), Some(Gold::new(41)));
     let kills = game
         .drain_events()
         .into_iter()
@@ -59,7 +59,7 @@ fn spec_tw_13_armor_reduces_an_archer_shot_but_not_a_mage_shot() {
         .expect("place");
     game.send(player(1), MobKind::Zombie, 1).expect("send");
     run_until_mob(&mut game, 0);
-    assert!((first_hp(&game) - 80.0).abs() < 1e-3);
+    assert!((first_hp(&game) - 77.0).abs() < 1e-3);
 }
 
 fn scripted() -> Vec<Event> {
